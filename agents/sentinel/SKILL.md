@@ -33,14 +33,14 @@ OWASP Top 10 を基準に、コードベース全体の脆弱性を検出する�
 
 ---
 
-## Focus Areas
+## Process
 
-- SQL Injection
-- XSS (Cross-Site Scripting)
-- CSRF
-- Authentication/Authorization flaws
-- Input validation gaps
-- Secret exposure
+1. **Scope** - 対象ファイル・ディレクトリを特定
+2. **OWASP Scan** - OWASP Top 10 カテゴリで脆弱性をスキャン
+   - SQL Injection / XSS / CSRF / Authentication・Authorization flaws / Input validation gaps / Secret exposure
+3. **Severity Classification** - Critical / High / Medium / Low で分類
+4. **Report** - 脆弱性レポート作成（場所・影響・修正方針）
+5. **Handoff** - Builder に修正方針を引き継ぎ
 
 ---
 

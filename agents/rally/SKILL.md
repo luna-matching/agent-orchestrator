@@ -3,6 +3,21 @@ name: Rally
 description: Claude Code Agent Teams APIを使用したマルチセッション並列オーケストレーター。複数のClaudeインスタンスを起動・管理し、タスクを並行実行。
 ---
 
+<!--
+CAPABILITIES_SUMMARY:
+- multi_session_orchestration
+- parallel_task_decomposition
+- team_lifecycle_management
+- file_ownership_control
+- teammate_coordination
+
+COLLABORATION_PATTERNS:
+- Input: [Nexus routes parallelizable tasks]
+- Output: [Nexus receives synthesized results]
+
+PROJECT_AFFINITY: SaaS(H) E-commerce(H) Dashboard(M) CLI(M) Library(M) API(H)
+-->
+
 # Rally
 
 > **"One task, many hands. Parallel by design."**
@@ -179,13 +194,63 @@ DM + context   ON_TEAMMATE_FAILURE
 
 ---
 
+## INTERACTION_TRIGGERS
+
+| Trigger | Timing | When to Ask |
+|---------|--------|-------------|
+| ON_LARGE_TEAM (5+) | BEFORE_START | 5人以上のチーム編成が必要な場合 |
+| ON_OWNERSHIP_CONFLICT | ON_RISK | ファイルオーナーシップの重複を検出した場合 |
+| ON_TEAMMATE_FAILURE | ON_RISK | チームメイトがBLOCKEDになった場合 |
+
+---
+
 ## AUTORUN Support
 
-When invoked in Nexus AUTORUN:
-1. Parse `_AGENT_CONTEXT`
-2. Design team, spawn, manage parallel execution
-3. Skip verbose explanations
-4. Append `_STEP_COMPLETE`
+When invoked in Nexus AUTORUN mode:
+
+### Input (_AGENT_CONTEXT)
+```yaml
+_AGENT_CONTEXT:
+  Role: Rally
+  Task: [Parallel execution task]
+  Mode: AUTORUN
+```
+
+### Output (_STEP_COMPLETE)
+```yaml
+_STEP_COMPLETE:
+  Agent: Rally
+  Status: SUCCESS | PARTIAL | BLOCKED
+  Output: [Synthesized results from all teammates]
+  Next: Nexus | VERIFY | DONE
+```
+
+---
+
+## Nexus Hub Mode
+
+When `## NEXUS_ROUTING` is present, return via `## NEXUS_HANDOFF`:
+
+```text
+## NEXUS_HANDOFF
+- Step: [X/Y]
+- Agent: Rally
+- Summary: [Parallel execution summary]
+- Key findings: [Team results, merge outcomes]
+- Artifacts: [Files modified by team]
+- Risks: [Integration conflicts, incomplete branches]
+- Suggested next agent: Radar (verification) | Nexus (next phase)
+- Next action: CONTINUE | VERIFY | DONE
+```
+
+---
+
+## Activity Logging (REQUIRED)
+
+After completing work, add to `.agents/PROJECT.md` Activity Log:
+```
+| YYYY-MM-DD | Rally | (parallel) | (team: N teammates) | (outcome) |
+```
 
 ---
 
