@@ -1,28 +1,49 @@
 # Agent Orchestrator
 
-Claude Code Agent Teams API に最適化されたエージェントチーム構築フレームワーク。
+Claude Code でエージェントチームを構築するためのフレームワーク。
 
-[simota/agent-skills](https://github.com/simota/agent-skills) の設計思想をベースに、Claude Code のネイティブツール（TeamCreate, Task, SendMessage, TaskCreate 等）との統合を前提に再設計。
+各プロジェクトにインストールして使用する。中央リポジトリからエージェント定義を取得し、プロジェクトごとに独立したエージェントチームを構成。
 
-## Features
+[simota/agent-skills](https://github.com/simota/agent-skills) の設計思想をベースに再設計。
 
-- **Hub-Spoke アーキテクチャ** - Nexus/Rally を中心としたエージェント協調
-- **ファイルオーナーシップ制御** - 並列実行時の競合防止プロトコル
-- **4段階ガードレール** - L1(監視)〜L4(中断)の安全実行制御
-- **AUTORUN モード** - エージェントチェーンの全自動実行
-- **逆フィードバック** - 下流→上流の品質フィードバックループ
-- **プロジェクト親和性マトリクス** - プロジェクト種別に応じたエージェント選定
-
-## Quick Start
+## Install
 
 ```bash
-# インストール
-git clone https://github.com/luna-matching/agent-orchestrator.git ~/.claude/skills
+# 全エージェントをインストール
+curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main/install.sh | bash
 
-# 使用例
-/Nexus ログイン機能を実装したい
-/Scout このバグの原因を調査して
-/Rally フロントエンドとバックエンドを並列実装して
+# 特定のエージェントのみ
+curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main/install.sh | bash -s -- nexus rally builder radar
+
+# ローカルクローンから
+git clone https://github.com/luna-matching/agent-orchestrator.git /tmp/agent-orchestrator
+cd your-project && /tmp/agent-orchestrator/install.sh
+```
+
+### インストール結果
+
+```
+your-project/
+├── .claude/
+│   └── agents/
+│       ├── _framework.md    # フレームワークプロトコル
+│       ├── nexus.md          # オーケストレーター
+│       ├── rally.md          # 並列オーケストレーター
+│       ├── builder.md        # 実装
+│       ├── ...               # 他のエージェント
+│       └── architect.md      # メタデザイナー
+├── .agents/
+│   └── PROJECT.md            # 共有知識ファイル
+└── CLAUDE.md                 # フレームワーク参照を追記
+```
+
+## Usage
+
+```
+/nexus ログイン機能を実装したい
+/scout このバグの原因を調査して
+/rally フロントエンドとバックエンドを並列実装して
+/builder ユーザー認証APIを実装して
 ```
 
 ## Architecture
@@ -38,57 +59,72 @@ User Request
      +---> Parallel: Rally → TeamCreate → Teammates (実セッション並列)
 ```
 
-### エージェント一覧
+### Design: Registry Pattern
 
-#### オーケストレーション
-| Agent | 役割 |
-|-------|------|
-| **Nexus** | チーム統括。タスク分類→チェーン設計→自動実行 |
-| **Sherpa** | タスク分解。15分以内のAtomic Stepに分割 |
-| **Rally** | 並列実行。TeamCreate/Task APIで複数Claudeを管理 |
-| **Architect** | メタデザイナー。新エージェントのSKILL.md設計 |
+```
+                 ┌──────────────────────────┐
+                 │  GitHub Repository        │
+                 │  (luna-matching/          │
+                 │   agent-orchestrator)     │
+                 │                          │
+                 │  Central agent registry  │
+                 └────────┬─────────────────┘
+                          │
+            curl / install.sh
+                          │
+          ┌───────────────┼───────────────┐
+          │               │               │
+          v               v               v
+     Project A       Project B       Project C
+     .claude/agents/ .claude/agents/ .claude/agents/
+     (独立動作)       (独立動作)       (独立動作)
+```
 
-#### 調査
-| Agent | 役割 |
-|-------|------|
-| **Scout** | バグ調査・根本原因分析（RCA） |
+各プロジェクトは独立したエージェントチームを持ち、同時並行で実行可能。
 
-#### 実装
-| Agent | 役割 |
-|-------|------|
-| **Builder** | 本番実装。型安全・TDD・DDD |
-| **Forge** | プロトタイプ。動くものを最速で |
-| **Artisan** | フロントエンド実装。React/Vue/Svelte |
+## Agents
 
-#### 品質保証
-| Agent | 役割 |
-|-------|------|
-| **Radar** | テスト追加・カバレッジ向上 |
-| **Sentinel** | セキュリティ静的分析（SAST） |
-| **Judge** | コードレビュー・バグ検出 |
-| **Zen** | リファクタリング（動作不変） |
+### オーケストレーション
 
-#### Git/PR
-| Agent | 役割 |
-|-------|------|
-| **Guardian** | コミット粒度最適化・PR戦略 |
+| Agent | Role | Description |
+|-------|------|-------------|
+| **Nexus** | 統括 | タスク分類→チェーン設計→自動実行 |
+| **Sherpa** | 分解 | タスクを15分以内のAtomic Stepに分割 |
+| **Rally** | 並列 | TeamCreate/Task APIで複数Claudeを管理 |
+| **Architect** | 設計 | 新エージェントのSKILL.md設計 |
 
-> 全エージェント定義は `agents/` ディレクトリを参照。
-> 追加エージェントは [simota/agent-skills](https://github.com/simota/agent-skills) から必要に応じて取り込み可能。
+### 調査・実装
+
+| Agent | Role | Description |
+|-------|------|-------------|
+| **Scout** | 調査 | バグ調査・根本原因分析（5-Why） |
+| **Builder** | 実装 | 本番品質コード。型安全・TDD・DDD |
+| **Forge** | 試作 | プロトタイプ。動くものを最速で |
+| **Artisan** | UI | フロントエンド。React/Vue/Svelte |
+
+### 品質・Git
+
+| Agent | Role | Description |
+|-------|------|-------------|
+| **Radar** | テスト | テスト追加・カバレッジ向上 |
+| **Sentinel** | セキュリティ | SAST・OWASP Top 10 |
+| **Judge** | レビュー | コードレビュー（変更なし） |
+| **Zen** | リファクタ | リファクタリング（動作不変） |
+| **Guardian** | Git | コミット粒度最適化・PR戦略 |
 
 ## Execution Modes
 
-| Mode | トリガー | 動作 |
-|------|---------|------|
-| **AUTORUN_FULL** | デフォルト | 全自動実行（ガードレール付き） |
-| **AUTORUN** | `## NEXUS_AUTORUN` | SIMPLE自動、COMPLEX→Guided |
-| **GUIDED** | `## NEXUS_GUIDED` | 判断ポイントで確認 |
-| **INTERACTIVE** | `## NEXUS_INTERACTIVE` | 各ステップで確認 |
+| Mode | Trigger | Behavior |
+|------|---------|----------|
+| AUTORUN_FULL | Default | 全自動（ガードレール付き） |
+| AUTORUN | `## NEXUS_AUTORUN` | SIMPLE自動、COMPLEX→Guided |
+| GUIDED | `## NEXUS_GUIDED` | 判断ポイントで確認 |
+| INTERACTIVE | `## NEXUS_INTERACTIVE` | 各ステップで確認 |
 
 ## Chain Templates
 
-| タスク | チェーン |
-|--------|---------|
+| Task | Chain |
+|------|-------|
 | バグ修正(簡単) | Scout → Builder → Radar |
 | バグ修正(複雑) | Scout → Sherpa → Builder → Radar → Sentinel |
 | 機能開発(小) | Builder → Radar |
@@ -98,72 +134,34 @@ User Request
 | セキュリティ監査 | Sentinel → Builder → Radar |
 | PR準備 | Guardian → Judge |
 
-## Parallel Execution (Rally)
-
-Rally は Claude Code Agent Teams API を直接使用して並列実行を実現:
-
-```
-Rally Assessment
-     |
-     v
-File Ownership Declaration
-     |
-     v
-TeamCreate → Task(teammate_a) + Task(teammate_b)
-     |
-     v
-TaskCreate + TaskUpdate (dependency management)
-     |
-     v
-Monitor via TaskList → SendMessage for coordination
-     |
-     v
-Verify → shutdown_request → TeamDelete
-```
-
-### ファイルオーナーシップ
-
-```yaml
-ownership_map:
-  teammate_frontend:
-    exclusive_write: [src/components/**, src/pages/**]
-    shared_read: [src/types/**]
-  teammate_backend:
-    exclusive_write: [src/api/**, src/services/**]
-    shared_read: [src/types/**]
-```
-
-## Shared Knowledge
-
-プロジェクト内の `.agents/PROJECT.md` にエージェント間の知識を蓄積:
-
-- Architecture Decisions
-- Domain Glossary
-- Known Gotchas
-- Activity Log（全エージェントが作業後に必須記録）
-
 ## Customization
 
 ### エージェント追加
 
-1. `agents/[name]/SKILL.md` を作成
-2. `_templates/SKILL_TEMPLATE.md` のフォーマットに従う
-3. Boundaries / AUTORUN Support / Nexus Hub Mode を必ず含める
+1. `agents/[name]/SKILL.md` を作成（`_templates/SKILL_TEMPLATE.md` 参照）
+2. `install.sh` の `ALL_AGENTS` に追加
+3. `install.sh` を実行して対象プロジェクトに反映
 
 ### プロジェクト固有設定
 
-対象プロジェクトの CLAUDE.md に以下を追加:
+`CLAUDE.md` に追記:
 
 ```markdown
-## Agent Framework
-See ~/.claude/skills/agent-orchestrator/ for agent team definitions.
 Project type: SaaS
 ```
+
+### 共有知識
+
+`.agents/PROJECT.md` にエージェント間の知識を蓄積:
+
+- Architecture Decisions
+- Domain Glossary
+- Known Gotchas
+- Activity Log（全エージェント必須）
 
 ## Origin
 
 [simota/agent-skills](https://github.com/simota/agent-skills) (MIT License) の設計思想をベースに構築。
-65エージェントの完全版が必要な場合は元リポジトリを参照。
 
 ## License
 
