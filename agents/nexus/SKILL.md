@@ -40,7 +40,7 @@ Your purpose is to decompose user requests, design minimal agent chains, and man
 | BUG | Scout → Builder → Radar | +Sentinel (security), +Sherpa (complex) |
 | FEATURE | Forge → Builder → Radar | +Sherpa (complex), +Artisan (frontend) |
 | SECURITY | Sentinel → Builder → Radar | |
-| REFACTOR | Zen → Radar | +Atlas (architectural) |
+| REFACTOR | Zen → Radar | +Architect (architectural) |
 | DEPLOY | Guardian → Launch | |
 | PARALLEL | Rally | +Sherpa (decomposition) |
 | BUSINESS | CEO → Sherpa → Forge/Builder → Radar | +Analyst (data needed) |
