@@ -2,7 +2,7 @@
 
 ## Overview
 
-エージェントチーム構築のための中央レジストリリポジトリ。
+エージェントチーム構築のための中央レジストリリポジトリ。67エージェント体制（simota/agent-skills 65 + Luna独自 2）。
 
 各プロジェクトに `install.sh` でエージェント定義を配布する。このリポジトリ自体はレジストリであり、直接 clone して使うものではない。
 
@@ -12,23 +12,77 @@
 
 ```
 agent-orchestrator/
-├── agents/              # エージェント定義（SKILL.md）
-│   ├── ceo/             # 意思決定（最上流）
+├── agents/              # エージェント定義（67個）
+│   ├── ceo/             # Luna独自: 意思決定（最上流）
+│   ├── analyst/         # Luna独自: データ分析
 │   ├── nexus/           # 統括オーケストレーター
 │   ├── rally/           # 並列オーケストレーター
 │   ├── sherpa/          # タスク分解
 │   ├── builder/         # 本番実装
 │   ├── scout/           # バグ調査
 │   ├── radar/           # テスト
-│   ├── sentinel/        # セキュリティ
+│   ├── sentinel/        # セキュリティ（SAST）
 │   ├── guardian/        # Git/PR
 │   ├── judge/           # コードレビュー
 │   ├── zen/             # リファクタリング
 │   ├── forge/           # プロトタイプ
 │   ├── artisan/         # フロントエンド
 │   ├── architect/       # メタデザイナー
-│   └── analyst/         # データ分析
+│   ├── anvil/           # CLI/TUI構築
+│   ├── arena/           # 競争/協力開発
+│   ├── atlas/           # アーキテクチャ分析
+│   ├── bard/            # devグランブル投稿
+│   ├── bolt/            # パフォーマンス改善
+│   ├── bridge/          # ビジネス⇔技術翻訳
+│   ├── canon/           # 標準準拠評価
+│   ├── canvas/          # 可視化（Mermaid等）
+│   ├── cipher/          # 意図解読
+│   ├── compete/         # 競合調査
+│   ├── director/        # デモ動画撮影
+│   ├── echo/            # UXフロー検証
+│   ├── experiment/      # A/Bテスト設計
+│   ├── flow/            # アニメーション実装
+│   ├── gateway/         # API設計
+│   ├── gear/            # CI/CD・DevOps
+│   ├── grove/           # リポジトリ構造
+│   ├── growth/          # SEO/CRO
+│   ├── harvest/         # PR情報収集・レポート
+│   ├── hone/            # 品質反復改善
+│   ├── horizon/         # モダナイゼーション
+│   ├── launch/          # リリース管理
+│   ├── lens/            # コード理解
+│   ├── magi/            # 3視点意思決定
+│   ├── morph/           # フォーマット変換
+│   ├── muse/            # デザイントークン
+│   ├── navigator/       # ブラウザ操作自動化
+│   ├── palette/         # ユーザビリティ改善
+│   ├── polyglot/        # i18n/l10n
+│   ├── probe/           # DAST
+│   ├── pulse/           # KPI/トラッキング
+│   ├── quill/           # JSDoc/README
+│   ├── reel/            # ターミナル録画
+│   ├── researcher/      # ユーザーリサーチ
+│   ├── retain/          # リテンション施策
+│   ├── rewind/          # Git考古学
+│   ├── ripple/          # 影響分析
+│   ├── scaffold/        # IaC/Docker
+│   ├── schema/          # DBスキーマ設計
+│   ├── scribe/          # 仕様書作成
+│   ├── showcase/        # Storybook
+│   ├── spark/           # 新機能提案
+│   ├── specter/         # 並行性バグ検出
+│   ├── stream/          # データパイプライン
+│   ├── sweep/           # クリーンアップ
+│   ├── trace/           # 行動分析
+│   ├── triage/          # 障害対応
+│   ├── tuner/           # DB最適化
+│   ├── vision/          # UI/UXディレクション
+│   ├── voice/           # フィードバック収集
+│   ├── voyager/         # E2Eテスト
+│   ├── warden/          # UX品質ゲート
+│   └── (各エージェントに references/ サブディレクトリあり)
 ├── _common/             # 共通プロトコル
+│   ├── AUTORUN.md
 │   ├── INTERACTION.md
 │   ├── GUARDRAIL.md
 │   ├── GIT_GUIDELINES.md
@@ -50,7 +104,11 @@ agent-orchestrator/
 ## Installation (per-project)
 
 ```bash
+# 全67エージェント
 curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main/install.sh | bash
+
+# 選択インストール
+curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main/install.sh | bash -s -- nexus builder radar ceo
 ```
 
 ## Core Principles

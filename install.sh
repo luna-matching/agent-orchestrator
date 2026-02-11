@@ -10,38 +10,55 @@ set -euo pipefail
 
 REPO="luna-matching/agent-orchestrator"
 BRANCH="main"
-BASE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 
-# All available agents
-ALL_AGENTS="ceo nexus rally sherpa builder scout radar sentinel guardian judge zen forge artisan architect analyst"
+# All 67 agents (65 simota + 2 Luna originals: ceo, analyst)
+ALL_AGENTS="analyst anvil architect arena artisan atlas bard bolt bridge builder canon canvas ceo cipher compete director echo experiment flow forge gateway gear grove growth guardian harvest hone horizon judge launch lens magi morph muse navigator nexus palette polyglot probe pulse quill radar rally reel researcher retain rewind ripple scaffold schema scout scribe sentinel sherpa showcase spark specter stream sweep trace triage tuner vision voice voyager warden zen"
 
 # Default: install all if no args
 AGENTS="${@:-$ALL_AGENTS}"
 
 echo "=== Agent Orchestrator Installer ==="
 echo "Source: github.com/${REPO}"
-echo "Agents: ${AGENTS}"
 echo ""
 
 # Create directories
 mkdir -p .claude/agents
 mkdir -p .agents
 
-echo "[1/5] Downloading agent definitions..."
+# Clone to temp directory for reliable file access
+TMPDIR=$(mktemp -d)
+trap "rm -rf $TMPDIR" EXIT
+
+echo "Downloading agent definitions..."
+git clone --depth 1 --branch "$BRANCH" "https://github.com/${REPO}.git" "$TMPDIR" 2>/dev/null
+
+INSTALLED=0
+SKIPPED=0
+
+echo "[1/5] Installing agent definitions..."
 for agent in $AGENTS; do
-  echo "  -> ${agent}"
-  curl -sfL "${BASE_URL}/agents/${agent}/SKILL.md" -o ".claude/agents/${agent}.md" 2>/dev/null || {
+  if [ -d "$TMPDIR/agents/$agent" ]; then
+    # Copy SKILL.md as flat file for Claude Code agent discovery
+    cp "$TMPDIR/agents/$agent/SKILL.md" ".claude/agents/${agent}.md"
+    # Copy references/ if they exist (for agents that need supplementary docs)
+    if [ -d "$TMPDIR/agents/$agent/references" ]; then
+      mkdir -p ".claude/agents/${agent}"
+      cp -r "$TMPDIR/agents/$agent/references" ".claude/agents/${agent}/"
+    fi
+    INSTALLED=$((INSTALLED + 1))
+    echo "  -> ${agent}"
+  else
     echo "  [WARN] Agent '${agent}' not found, skipping"
-    continue
-  }
+    SKIPPED=$((SKIPPED + 1))
+  fi
 done
 
 echo "[2/5] Downloading framework protocol..."
-curl -sfL "${BASE_URL}/_templates/CLAUDE_PROJECT.md" -o ".claude/agents/_framework.md" 2>/dev/null || true
+cp "$TMPDIR/_templates/CLAUDE_PROJECT.md" ".claude/agents/_framework.md"
 
 echo "[3/5] Setting up shared knowledge..."
 if [ ! -f ".agents/PROJECT.md" ]; then
-  curl -sfL "${BASE_URL}/_templates/PROJECT.md" -o ".agents/PROJECT.md" 2>/dev/null || true
+  cp "$TMPDIR/_templates/PROJECT.md" ".agents/PROJECT.md"
   echo "  -> Created .agents/PROJECT.md"
 else
   echo "  -> .agents/PROJECT.md already exists, skipping"
@@ -49,7 +66,7 @@ fi
 
 echo "[4/5] Setting up business context..."
 if [ ! -f ".agents/LUNA_CONTEXT.md" ]; then
-  curl -sfL "${BASE_URL}/_templates/LUNA_CONTEXT.md" -o ".agents/LUNA_CONTEXT.md" 2>/dev/null || true
+  cp "$TMPDIR/_templates/LUNA_CONTEXT.md" ".agents/LUNA_CONTEXT.md"
   echo "  -> Created .agents/LUNA_CONTEXT.md (customize for your project)"
 else
   echo "  -> .agents/LUNA_CONTEXT.md already exists, skipping"
@@ -107,10 +124,13 @@ fi
 
 echo ""
 echo "=== Installation complete ==="
+echo "  Installed: ${INSTALLED} agents"
+[ "$SKIPPED" -gt 0 ] && echo "  Skipped: ${SKIPPED} agents"
 echo ""
 echo "Installed agents:"
 for f in .claude/agents/*.md; do
-  [ -f "$f" ] && echo "  - $(basename "$f" .md)"
+  name=$(basename "$f" .md)
+  [ "$name" != "_framework" ] && echo "  - $name"
 done
 echo ""
 echo "Next steps:"
