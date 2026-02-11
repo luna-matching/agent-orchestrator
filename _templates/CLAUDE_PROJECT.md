@@ -11,9 +11,11 @@
 User Request
      |
      v
-  [Nexus] ---- 単一セッションオーケストレーター（ロールシミュレーション）
+  [Nexus] ---- Phase 0: EXECUTIVE_REVIEW
      |
-     +---> Sequential: Agent1 → Agent2 → Agent3
+     +---> CEO判断が必要？ → [CEO] → 方針・制約を付与
+     |
+     +---> Sequential: Agent1 → Agent2 → Agent3（ロールシミュレーション）
      |
      +---> Parallel: Rally → TeamCreate → Teammates（実セッション並列）
 ```
@@ -24,7 +26,8 @@ User Request
 2. **Minimum viable chain** - 必要最小限のエージェントで構成
 3. **File ownership is law** - 並列実行時、各ファイルのオーナーは1つだけ
 4. **Fail fast, recover smart** - ガードレール L1-L4 で早期検出、可能なら自動回復
-5. **Context is precious** - `.agents/PROJECT.md` でエージェント間の知識を共有
+5. **Context is precious** - `.agents/PROJECT.md` + `.agents/LUNA_CONTEXT.md` でエージェント間の知識を共有
+6. **CEO-first for business** - ビジネス判断は技術実装の前にCEOが方針を出す
 
 ---
 
@@ -51,6 +54,8 @@ User Request
 | リファクタリング | Zen → Radar |
 | セキュリティ監査 | Sentinel → Builder → Radar |
 | PR準備 | Guardian → Judge |
+| ビジネス/戦略 | CEO → Sherpa → Forge/Builder → Radar |
+| データ分析 | Analyst → CEO（意思決定要時）→ Nexus（施策化） |
 
 ---
 

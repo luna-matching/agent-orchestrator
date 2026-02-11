@@ -13,19 +13,21 @@
 ```
 agent-orchestrator/
 ├── agents/              # エージェント定義（SKILL.md）
-│   ├── nexus/
-│   ├── rally/
-│   ├── sherpa/
-│   ├── builder/
-│   ├── scout/
-│   ├── radar/
-│   ├── sentinel/
-│   ├── guardian/
-│   ├── judge/
-│   ├── zen/
-│   ├── forge/
-│   ├── artisan/
-│   └── architect/
+│   ├── ceo/             # 意思決定（最上流）
+│   ├── nexus/           # 統括オーケストレーター
+│   ├── rally/           # 並列オーケストレーター
+│   ├── sherpa/          # タスク分解
+│   ├── builder/         # 本番実装
+│   ├── scout/           # バグ調査
+│   ├── radar/           # テスト
+│   ├── sentinel/        # セキュリティ
+│   ├── guardian/        # Git/PR
+│   ├── judge/           # コードレビュー
+│   ├── zen/             # リファクタリング
+│   ├── forge/           # プロトタイプ
+│   ├── artisan/         # フロントエンド
+│   ├── architect/       # メタデザイナー
+│   └── analyst/         # データ分析
 ├── _common/             # 共通プロトコル
 │   ├── INTERACTION.md
 │   ├── GUARDRAIL.md
@@ -36,7 +38,12 @@ agent-orchestrator/
 ├── _templates/          # プロジェクト配布テンプレート
 │   ├── CLAUDE_PROJECT.md  → .claude/agents/_framework.md
 │   ├── PROJECT.md         → .agents/PROJECT.md
+│   ├── LUNA_CONTEXT.md    → .agents/LUNA_CONTEXT.md
 │   └── SKILL_TEMPLATE.md  # 新エージェント作成用
+├── scripts/
+│   └── redash/          # Redash API ツール
+│       ├── query.sh
+│       └── .env.example
 └── install.sh           # インストーラー
 ```
 
@@ -48,11 +55,12 @@ curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main
 
 ## Core Principles
 
-1. **Hub-spoke** - 全通信はオーケストレーター経由
-2. **Minimum viable chain** - 必要最小限のエージェント構成
-3. **File ownership is law** - 並列実行時のファイルオーナーシップ厳守
-4. **Fail fast, recover smart** - ガードレール L1-L4
-5. **Context is precious** - `.agents/PROJECT.md` で知識共有
+1. **CEO-first for business decisions** - ビジネス判断は技術実装の前にCEOが方針を出す
+2. **Hub-spoke** - 全通信はオーケストレーター経由
+3. **Minimum viable chain** - 必要最小限のエージェント構成
+4. **File ownership is law** - 並列実行時のファイルオーナーシップ厳守
+5. **Fail fast, recover smart** - ガードレール L1-L4
+6. **Context is precious** - `.agents/PROJECT.md` + `.agents/LUNA_CONTEXT.md` で知識共有
 
 ## Contributing
 
@@ -61,3 +69,4 @@ curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main
 1. `agents/[name]/SKILL.md` を `_templates/SKILL_TEMPLATE.md` に従い作成
 2. `install.sh` の `ALL_AGENTS` に名前を追加
 3. `_common/PROJECT_AFFINITY.md` にアフィニティを追記
+4. `README.md` / `CLAUDE.md` の Agents 一覧を更新

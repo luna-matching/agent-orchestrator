@@ -11,3 +11,9 @@ Thumbs.db
 # Runtime
 .agents/
 node_modules/
+
+# Redash artifacts
+artifacts/redash/
+
+# Environment
+.env

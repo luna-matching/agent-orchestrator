@@ -28,6 +28,8 @@ Nexus, Builder, Radar, Judge, Zen, Guardian, Sherpa, Scout, Rally
 
 | Agent | SaaS | E-com | Dash | CLI | Lib | API |
 |-------|------|-------|------|-----|-----|-----|
+| CEO | H | H | M | — | — | M |
+| Analyst | H | H | H | — | — | M |
 | Artisan | H | H | H | — | — | — |
 | Forge | H | H | H | M | — | M |
 | Sentinel | H | H | M | — | M | H |
@@ -42,7 +44,7 @@ Project_Type: SaaS
 Task: "Add OAuth2"
 
 Must-include (H):
-  - Builder, Sentinel, Radar
+  - Builder, Sentinel, Radar, CEO, Analyst
 
 Consider (M):
   - Forge, Architect
