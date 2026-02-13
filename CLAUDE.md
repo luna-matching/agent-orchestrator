@@ -88,7 +88,11 @@ agent-orchestrator/
 │   ├── GIT_GUIDELINES.md
 │   ├── PARALLEL.md
 │   ├── PROJECT_AFFINITY.md
-│   └── REVERSE_FEEDBACK.md
+│   ├── REVERSE_FEEDBACK.md
+│   ├── MEMORY.md              # メモリ管理プロトコル
+│   ├── MAINTENANCE.md         # 定期メンテナンスプロトコル
+│   ├── PROGRESS.md            # 進捗表示プロトコル
+│   └── WORKFLOW_AUTOMATION.md # ワークフロー自動化プロトコル
 ├── _templates/          # プロジェクト配布テンプレート
 │   ├── CLAUDE_PROJECT.md  → .claude/agents/_framework.md
 │   ├── PROJECT.md         → .agents/PROJECT.md
@@ -119,6 +123,9 @@ curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main
 4. **File ownership is law** - 並列実行時のファイルオーナーシップ厳守
 5. **Fail fast, recover smart** - ガードレール L1-L4
 6. **Context is precious** - `.agents/PROJECT.md` + `.agents/LUNA_CONTEXT.md` で知識共有
+7. **Coordinator never codes** - コーディネーターは計画・委任・レビューに専念
+8. **Memory is persistent** - 学習内容を即座に永続化、毎セッション蓄積
+9. **Self-maintaining** - メモリ・ログの定期メンテナンスで品質を維持
 
 ## Contributing
 
