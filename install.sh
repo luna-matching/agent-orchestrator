@@ -23,6 +23,7 @@ echo ""
 
 # Create directories
 mkdir -p .claude/agents
+mkdir -p .claude/commands
 mkdir -p .agents
 
 # Clone to temp directory for reliable file access
@@ -35,7 +36,7 @@ git clone --depth 1 --branch "$BRANCH" "https://github.com/${REPO}.git" "$TMPDIR
 INSTALLED=0
 SKIPPED=0
 
-echo "[1/5] Installing agent definitions..."
+echo "[1/6] Installing agent definitions..."
 for agent in $AGENTS; do
   if [ -d "$TMPDIR/agents/$agent" ]; then
     # Copy SKILL.md as flat file for Claude Code agent discovery
@@ -53,10 +54,21 @@ for agent in $AGENTS; do
   fi
 done
 
-echo "[2/5] Downloading framework protocol..."
+echo "[2/6] Installing custom commands..."
+COMMANDS_INSTALLED=0
+for cmd_file in "$TMPDIR"/commands/*.md; do
+  if [ -f "$cmd_file" ]; then
+    cp "$cmd_file" ".claude/commands/"
+    cmd_name=$(basename "$cmd_file" .md)
+    COMMANDS_INSTALLED=$((COMMANDS_INSTALLED + 1))
+    echo "  -> ${cmd_name}"
+  fi
+done
+
+echo "[3/6] Downloading framework protocol..."
 cp "$TMPDIR/_templates/CLAUDE_PROJECT.md" ".claude/agents/_framework.md"
 
-echo "[3/5] Setting up shared knowledge..."
+echo "[4/6] Setting up shared knowledge..."
 if [ ! -f ".agents/PROJECT.md" ]; then
   cp "$TMPDIR/_templates/PROJECT.md" ".agents/PROJECT.md"
   echo "  -> Created .agents/PROJECT.md"
@@ -64,7 +76,7 @@ else
   echo "  -> .agents/PROJECT.md already exists, skipping"
 fi
 
-echo "[4/5] Setting up business context..."
+echo "[5/6] Setting up business context..."
 if [ ! -f ".agents/LUNA_CONTEXT.md" ]; then
   cp "$TMPDIR/_templates/LUNA_CONTEXT.md" ".agents/LUNA_CONTEXT.md"
   echo "  -> Created .agents/LUNA_CONTEXT.md (customize for your project)"
@@ -72,7 +84,7 @@ else
   echo "  -> .agents/LUNA_CONTEXT.md already exists, skipping"
 fi
 
-echo "[5/5] Checking CLAUDE.md..."
+echo "[6/6] Checking CLAUDE.md..."
 if [ -f "CLAUDE.md" ]; then
   if grep -q "Agent Orchestrator" CLAUDE.md 2>/dev/null; then
     echo "  -> CLAUDE.md already has framework reference, skipping"
@@ -125,6 +137,7 @@ fi
 echo ""
 echo "=== Installation complete ==="
 echo "  Installed: ${INSTALLED} agents"
+echo "  Installed: ${COMMANDS_INSTALLED} custom commands"
 [ "$SKIPPED" -gt 0 ] && echo "  Skipped: ${SKIPPED} agents"
 echo ""
 echo "Installed agents:"
@@ -133,13 +146,29 @@ for f in .claude/agents/*.md; do
   [ "$name" != "_framework" ] && echo "  - $name"
 done
 echo ""
+echo "Installed commands:"
+for f in .claude/commands/*.md; do
+  if [ -f "$f" ]; then
+    name=$(basename "$f" .md)
+    echo "  - /$name"
+  fi
+done
+echo ""
 echo "Next steps:"
 echo "  1. Customize .agents/LUNA_CONTEXT.md for your project"
 echo "  2. Review .agents/PROJECT.md for shared knowledge"
 echo "  3. Customize CLAUDE.md for your project"
 echo ""
-echo "Usage:"
+echo "Usage (agents):"
 echo "  /ceo この機能の優先度を判断して"
 echo "  /nexus ログイン機能を実装したい"
 echo "  /analyst ユーザー離脱率を分析して"
 echo "  /rally フロントエンドとバックエンドを並列実装して"
+echo ""
+echo "Usage (commands):"
+echo "  /superpowers 認証システムをリファクタリングして"
+echo "  /frontend-design ダッシュボードのUIを設計して"
+echo "  /code-simplifier 直近の変更をクリーンアップして"
+echo "  /playground マークダウンエディタを作って"
+echo "  /chrome このページのデータを収集して"
+echo "  /pr-review #123"

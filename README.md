@@ -25,16 +25,23 @@ cd your-project && /tmp/agent-orchestrator/install.sh
 ```
 your-project/
 ├── .claude/
-│   └── agents/
-│       ├── _framework.md    # フレームワークプロトコル
-│       ├── ceo.md            # 意思決定（最上流）
-│       ├── nexus.md          # オーケストレーター
-│       ├── analyst.md        # データ分析
-│       ├── ...               # 他のエージェント（67個）
-│       ├── bard/             # references/ を持つエージェント
-│       │   └── references/
-│       └── atlas/
-│           └── references/
+│   ├── agents/
+│   │   ├── _framework.md    # フレームワークプロトコル
+│   │   ├── ceo.md            # 意思決定（最上流）
+│   │   ├── nexus.md          # オーケストレーター
+│   │   ├── analyst.md        # データ分析
+│   │   ├── ...               # 他のエージェント（67個）
+│   │   ├── bard/             # references/ を持つエージェント
+│   │   │   └── references/
+│   │   └── atlas/
+│   │       └── references/
+│   └── commands/
+│       ├── superpowers.md    # 大規模タスク向けTDD+検証モード
+│       ├── frontend-design.md # 洗練されたUI設計
+│       ├── code-simplifier.md # 動作不変のコードクリーンアップ
+│       ├── playground.md     # 単一HTML生成
+│       ├── chrome.md         # ブラウザ操作自動化
+│       └── pr-review.md     # 多面的PRレビュー
 ├── .agents/
 │   ├── PROJECT.md            # 共有知識ファイル
 │   └── LUNA_CONTEXT.md       # ビジネス文脈（CEO参照）
@@ -190,6 +197,28 @@ User Request
 | **Reel** | ターミナル録画・CLIデモGIF生成（VHS/asciinema） |
 | **Bard** | 3ペルソナ（Codex/Gemini/Claude）でdevグランブル投稿 |
 | **Lens** | コードベース理解・構造把握・機能探索（コード書かない） |
+
+## Custom Commands (6)
+
+エージェントとは別に、ワークフローモードとして使えるスラッシュコマンド。デフォルトで全てインストールされる。
+
+| Command | Description | 類似エージェントとの違い |
+|---------|-------------|----------------------|
+| `/superpowers` | リサーチ→設計→TDD→段階実装→検証の5フェーズ。大規模タスク向け | Sherpa(分解のみ) に対し、フルワークフロー |
+| `/frontend-design` | 数値基準付きデザインプロトコル。タイポグラフィ・余白・配色・レスポンシブ | Vision/Muse(戦略) に対し、即適用できるルール |
+| `/code-simplifier` | git diffベースで直近変更のみクリーンアップ。各ステップでテスト確認 | Zen(全体リファクタ) に対し、軽量・局所的 |
+| `/playground` | 外部依存ゼロの単一HTMLツール生成。open コマンドで即確認 | Forge(プロトタイプ全般) に対し、単一ファイル特化 |
+| `/chrome` | Playwrightでブラウザ操作。既存セッション活用、スクショ確認 | Navigator(フルエージェント) の軽量インライン版 |
+| `/pr-review` | テスト/エラー処理/型/品質/シンプル化の5観点で構造化レビュー | Judge(バグ検出特化) に対し、多面的・構造化 |
+
+```bash
+/superpowers 認証システムをリファクタリングして
+/frontend-design ダッシュボードのUIを設計して
+/code-simplifier 直近の変更をクリーンアップして
+/playground マークダウンエディタを作って
+/chrome このページのデータを収集して
+/pr-review #123
+```
 
 ## Execution Modes
 

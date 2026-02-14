@@ -81,6 +81,13 @@ agent-orchestrator/
 │   ├── voyager/         # E2Eテスト
 │   ├── warden/          # UX品質ゲート
 │   └── (各エージェントに references/ サブディレクトリあり)
+├── commands/            # カスタムスラッシュコマンド（6個）
+│   ├── superpowers.md    # リサーチ→TDD→検証の大規模タスクモード
+│   ├── frontend-design.md # 数値基準付きデザインプロトコル
+│   ├── code-simplifier.md # git diffベースの軽量クリーンアップ
+│   ├── playground.md     # 単一HTMLインタラクティブツール生成
+│   ├── chrome.md         # Playwrightブラウザ操作自動化
+│   └── pr-review.md     # 5観点構造化PRレビュー
 ├── _common/             # 共通プロトコル
 │   ├── AUTORUN.md
 │   ├── INTERACTION.md
@@ -104,6 +111,19 @@ agent-orchestrator/
 │       └── .env.example
 └── install.sh           # インストーラー
 ```
+
+## Custom Commands (6)
+
+エージェント召喚とは異なり、現在のセッションにワークフローモードを適用するスラッシュコマンド。
+
+| Command | Purpose |
+|---------|---------|
+| `/superpowers` | Explore→設計→TDD→段階実装→検証 |
+| `/frontend-design` | タイポグラフィ・余白・配色の数値基準適用 |
+| `/code-simplifier` | git diffベースの直近変更クリーンアップ |
+| `/playground` | 外部依存ゼロの単一HTMLツール生成 |
+| `/chrome` | Playwright でブラウザ操作自動化 |
+| `/pr-review` | 5観点（テスト/エラー/型/品質/シンプル化）の構造化レビュー |
 
 ## Installation (per-project)
 
