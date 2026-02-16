@@ -245,7 +245,7 @@ User Request
 | **データ分析** | **Analyst → CEO（意思決定要時）→ Nexus** |
 | **アーキテクチャ** | **Atlas → Magi → Builder/Scaffold** |
 
-## MCP Integration (4)
+## MCP Integration (5)
 
 エージェントの能力を拡張するMCPサーバー連携。詳細は `_common/MCP.md` 参照。
 
@@ -255,6 +255,7 @@ User Request
 | **Sentry** | エラー監視・スタックトレース分析 | Scout, Triage, Sentinel |
 | **Memory** | ナレッジグラフベースの永続メモリ | Nexus, 全コーディネーター |
 | **PostgreSQL** | 自然言語→SQL変換、データ分析 | Analyst, Schema, Tuner |
+| **Playwright** | ブラウザ操作・E2Eテスト・スクリーンショット | Navigator, Voyager, Director, Probe |
 
 ```bash
 # Global MCP一括セットアップ
