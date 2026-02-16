@@ -245,6 +245,51 @@ User Request
 | **データ分析** | **Analyst → CEO（意思決定要時）→ Nexus** |
 | **アーキテクチャ** | **Atlas → Magi → Builder/Scaffold** |
 
+## Cloud Execution
+
+ローカル環境のメモリ制約を回避するため、重い処理をAWS EC2に自動ルーティングする。詳細は `docs/CLOUD_ARCHITECTURE.md` 参照。
+
+### Routing Rule
+
+| Condition | Execution |
+|-----------|-----------|
+| 実行見込み10分超 | Cloud |
+| 大量ログ出力 | Cloud |
+| LLM/embedding/スクレイピング/バックフィル | Cloud |
+| 並列2本以上 | Cloud |
+| メモリ推定8GB超 | Cloud |
+| 短時間スクリプト（3分以内） | Local |
+| UI操作中心 | Local |
+
+### Quick Start
+
+```bash
+# 1. EC2セットアップ（初回のみ）
+scp scripts/cloud/setup-ec2.sh your-ec2:~/ && ssh your-ec2 ./setup-ec2.sh
+
+# 2. ローカル設定
+cp scripts/cloud/.env.example scripts/cloud/.env
+# CLOUD_HOST, CLOUD_USER 等を設定
+
+# 3. ジョブ実行
+bash scripts/cloud/orchestrator.sh run my-job "cd ~/work/project && npm run build"
+bash scripts/cloud/orchestrator.sh status
+bash scripts/cloud/orchestrator.sh logs my-job --follow
+bash scripts/cloud/orchestrator.sh attach my-job
+bash scripts/cloud/orchestrator.sh stop my-job
+```
+
+### CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `orch run <name> <cmd>` | クラウドでジョブ起動 |
+| `orch logs <name> [-f]` | ログ表示 |
+| `orch attach <name>` | tmuxセッションにアタッチ |
+| `orch stop <name>` | ジョブ停止 |
+| `orch status` | 稼働中ジョブ一覧 |
+| `orch list` | 全ジョブ履歴 |
+
 ## MCP Integration (5)
 
 エージェントの能力を拡張するMCPサーバー連携。詳細は `_common/MCP.md` 参照。

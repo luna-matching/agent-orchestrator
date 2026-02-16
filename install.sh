@@ -8,6 +8,7 @@ set -euo pipefail
 #   ./install.sh                    # Install all agents
 #   ./install.sh nexus rally builder # Install specific agents
 #   ./install.sh --with-mcp         # Install agents + setup MCP servers
+#   ./install.sh --with-cloud       # Install agents + cloud execution scripts
 
 REPO="luna-matching/agent-orchestrator"
 BRANCH="main"
@@ -17,10 +18,12 @@ ALL_AGENTS="analyst anvil architect arena artisan atlas bard bolt bridge builder
 
 # Parse flags
 WITH_MCP=false
+WITH_CLOUD=false
 AGENT_ARGS=()
 for arg in "$@"; do
   case "$arg" in
     --with-mcp) WITH_MCP=true ;;
+    --with-cloud) WITH_CLOUD=true ;;
     *) AGENT_ARGS+=("$arg") ;;
   esac
 done
@@ -109,6 +112,16 @@ if [ -f "$TMPDIR/_templates/mcp-settings.json" ]; then
   echo "  -> Copied mcp-settings.template.json"
 else
   echo "  [WARN] _templates/mcp-settings.json not found in repo, skipping"
+fi
+# Cloud scripts
+if [ -d "$TMPDIR/scripts/cloud" ]; then
+  mkdir -p .claude/scripts/cloud
+  cp "$TMPDIR/scripts/cloud/orchestrator.sh" ".claude/scripts/cloud/orchestrator.sh"
+  chmod +x ".claude/scripts/cloud/orchestrator.sh"
+  cp "$TMPDIR/scripts/cloud/.env.example" ".claude/scripts/cloud/.env.example"
+  cp "$TMPDIR/scripts/cloud/setup-ec2.sh" ".claude/scripts/cloud/setup-ec2.sh"
+  chmod +x ".claude/scripts/cloud/setup-ec2.sh"
+  echo "  -> Copied cloud execution scripts"
 fi
 
 echo "[7/8] Checking CLAUDE.md..."
@@ -206,6 +219,12 @@ echo "  bash scripts/setup-mcp.sh"
 echo ""
 echo "  # Project-specific PostgreSQL MCP"
 echo "  claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres 'postgresql://user:pass@host:5432/db'"
+echo ""
+echo "Cloud Execution:"
+echo "  # Setup cloud worker"
+echo "  cp .claude/scripts/cloud/.env.example .claude/scripts/cloud/.env"
+echo "  # Configure CLOUD_HOST, then:"
+echo "  bash .claude/scripts/cloud/orchestrator.sh status"
 
 echo ""
 echo "[8/8] MCP setup..."
