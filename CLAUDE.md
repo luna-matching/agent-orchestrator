@@ -2,7 +2,7 @@
 
 ## Overview
 
-エージェントチーム構築のための中央レジストリリポジトリ。67エージェント体制（simota/agent-skills 65 + Luna独自 2）。
+エージェントチーム構築のための中央レジストリリポジトリ。68エージェント体制（simota/agent-skills 65 + Luna独自 3）。
 
 各プロジェクトに `install.sh` でエージェント定義を配布する。このリポジトリ自体はレジストリであり、直接 clone して使うものではない。
 
@@ -12,7 +12,7 @@
 
 ```
 agent-orchestrator/
-├── agents/              # エージェント定義（67個）
+├── agents/              # エージェント定義（68個）
 │   ├── ceo/             # Luna独自: 意思決定（最上流）
 │   ├── analyst/         # Luna独自: データ分析
 │   ├── nexus/           # 統括オーケストレーター
@@ -31,6 +31,7 @@ agent-orchestrator/
 │   ├── anvil/           # CLI/TUI構築
 │   ├── arena/           # 競争/協力開発
 │   ├── atlas/           # アーキテクチャ分析
+│   ├── auditor/         # SPEC準拠監査
 │   ├── bard/            # devグランブル投稿
 │   ├── bolt/            # パフォーマンス改善
 │   ├── bridge/          # ビジネス⇔技術翻訳
@@ -138,7 +139,7 @@ agent-orchestrator/
 ## Installation (per-project)
 
 ```bash
-# 全67エージェント
+# 全68エージェント
 curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main/install.sh | bash
 
 # 選択インストール

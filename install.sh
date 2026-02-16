@@ -13,8 +13,8 @@ set -euo pipefail
 REPO="luna-matching/agent-orchestrator"
 BRANCH="main"
 
-# All 67 agents (65 simota + 2 Luna originals: ceo, analyst)
-ALL_AGENTS="analyst anvil architect arena artisan atlas bard bolt bridge builder canon canvas ceo cipher compete director echo experiment flow forge gateway gear grove growth guardian harvest hone horizon judge launch lens magi morph muse navigator nexus palette polyglot probe pulse quill radar rally reel researcher retain rewind ripple scaffold schema scout scribe sentinel sherpa showcase spark specter stream sweep trace triage tuner vision voice voyager warden zen"
+# All 68 agents (65 simota + 3 Luna originals: ceo, analyst, auditor)
+ALL_AGENTS="analyst anvil architect arena artisan atlas auditor bard bolt bridge builder canon canvas ceo cipher compete director echo experiment flow forge gateway gear grove growth guardian harvest hone horizon judge launch lens magi morph muse navigator nexus palette polyglot probe pulse quill radar rally reel researcher retain rewind ripple scaffold schema scout scribe sentinel sherpa showcase spark specter stream sweep trace triage tuner vision voice voyager warden zen"
 
 # Parse flags
 WITH_MCP=false

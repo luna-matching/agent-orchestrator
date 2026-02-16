@@ -56,6 +56,9 @@ User Request
 | PR準備 | Guardian → Judge |
 | ビジネス/戦略 | CEO → Sherpa → Forge/Builder → Radar |
 | データ分析 | Analyst → CEO（意思決定要時）→ Nexus（施策化） |
+| データパイプライン修正 | Scout → Analyst → Builder → Radar |
+| スペック準拠監査 | Auditor → Builder → Radar |
+| 大規模修正（監査付き） | Sherpa → Builder → Auditor → Radar |
 
 ---
 
