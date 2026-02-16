@@ -8,7 +8,6 @@ set -euo pipefail
 #   ./install.sh                    # Install all agents
 #   ./install.sh nexus rally builder # Install specific agents
 #   ./install.sh --with-mcp         # Install agents + setup MCP servers
-#   ./install.sh --with-cloud       # Install agents + cloud execution scripts
 
 REPO="luna-matching/agent-orchestrator"
 BRANCH="main"
@@ -18,12 +17,10 @@ ALL_AGENTS="analyst anvil architect arena artisan atlas auditor bard bolt bridge
 
 # Parse flags
 WITH_MCP=false
-WITH_CLOUD=false
 AGENT_ARGS=()
 for arg in "$@"; do
   case "$arg" in
     --with-mcp) WITH_MCP=true ;;
-    --with-cloud) WITH_CLOUD=true ;;
     *) AGENT_ARGS+=("$arg") ;;
   esac
 done
@@ -113,13 +110,23 @@ if [ -f "$TMPDIR/_templates/mcp-settings.json" ]; then
 else
   echo "  [WARN] _templates/mcp-settings.json not found in repo, skipping"
 fi
-# Cloud scripts (Codespaces)
+# Cloud scripts
 if [ -d "$TMPDIR/scripts/cloud" ]; then
   mkdir -p .claude/scripts/cloud
-  cp "$TMPDIR/scripts/cloud/codespace.sh" ".claude/scripts/cloud/codespace.sh"
-  chmod +x ".claude/scripts/cloud/codespace.sh"
-  cp "$TMPDIR/scripts/cloud/.env.example" ".claude/scripts/cloud/.env.example"
-  echo "  -> Copied cloud execution scripts (Codespaces)"
+  for f in cloud.sh codespace.sh ec2.sh setup-billing-alert.sh .env.example; do
+    if [ -f "$TMPDIR/scripts/cloud/$f" ]; then
+      cp "$TMPDIR/scripts/cloud/$f" ".claude/scripts/cloud/$f"
+      [[ "$f" == *.sh ]] && chmod +x ".claude/scripts/cloud/$f"
+    fi
+  done
+  echo "  -> Copied cloud execution scripts"
+fi
+# devcontainer template
+if [ -f "$TMPDIR/_templates/devcontainer.json" ]; then
+  mkdir -p .devcontainer
+  cp "$TMPDIR/_templates/devcontainer.json" ".devcontainer/devcontainer.json"
+  [ -f "$TMPDIR/_templates/post-create.sh" ] && cp "$TMPDIR/_templates/post-create.sh" ".devcontainer/post-create.sh"
+  echo "  -> Copied devcontainer template"
 fi
 
 echo "[7/8] Checking CLAUDE.md..."
@@ -218,13 +225,14 @@ echo ""
 echo "  # Project-specific PostgreSQL MCP"
 echo "  claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres 'postgresql://user:pass@host:5432/db'"
 echo ""
-echo "Cloud Execution (Codespaces):"
+echo "Cloud Execution:"
 echo "  # Setup"
 echo "  cp .claude/scripts/cloud/.env.example .claude/scripts/cloud/.env"
+echo "  # CLOUD_PROVIDER=codespaces or ec2 を設定"
 echo "  # Usage:"
-echo "  bash .claude/scripts/cloud/codespace.sh create --repo OWNER/REPO"
-echo "  bash .claude/scripts/cloud/codespace.sh run \"cd /workspaces/project && npm run build\""
-echo "  bash .claude/scripts/cloud/codespace.sh status"
+echo "  bash .claude/scripts/cloud/cloud.sh start"
+echo "  bash .claude/scripts/cloud/cloud.sh run \"npm run build\""
+echo "  bash .claude/scripts/cloud/cloud.sh status"
 
 echo ""
 echo "[8/8] MCP setup..."
