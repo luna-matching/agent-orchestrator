@@ -109,7 +109,8 @@ agent-orchestrator/
 │   ├── LUNA_CONTEXT.md    → .agents/LUNA_CONTEXT.md
 │   ├── SKILL_TEMPLATE.md  # 新エージェント作成用
 │   ├── mcp-settings.json  # MCP設定テンプレート
-│   └── devcontainer.json  # Codespaces環境テンプレート
+│   ├── devcontainer.json  # Codespaces devcontainer設定
+│   └── post-create.sh     # Codespaces初期化スクリプト
 ├── docs/
 │   └── CLOUD_ARCHITECTURE.md  # Cloud-first実行基盤アーキテクチャ
 ├── scripts/
