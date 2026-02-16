@@ -35,13 +35,17 @@ your-project/
 │   │   │   └── references/
 │   │   └── atlas/
 │   │       └── references/
-│   └── commands/
-│       ├── superpowers.md    # 大規模タスク向けTDD+検証モード
-│       ├── frontend-design.md # 洗練されたUI設計
-│       ├── code-simplifier.md # 動作不変のコードクリーンアップ
-│       ├── playground.md     # 単一HTML生成
-│       ├── chrome.md         # ブラウザ操作自動化
-│       └── pr-review.md     # 多面的PRレビュー
+│   ├── commands/
+│   │   ├── superpowers.md    # 大規模タスク向けTDD+検証モード
+│   │   ├── frontend-design.md # 洗練されたUI設計
+│   │   ├── code-simplifier.md # 動作不変のコードクリーンアップ
+│   │   ├── playground.md     # 単一HTML生成
+│   │   ├── chrome.md         # ブラウザ操作自動化
+│   │   └── pr-review.md     # 多面的PRレビュー
+│   └── scripts/
+│       └── cloud/
+│           ├── codespace.sh      # Codespaces CLIラッパー
+│           └── .env.example      # 設定テンプレート
 ├── .agents/
 │   ├── PROJECT.md            # 共有知識ファイル
 │   └── LUNA_CONTEXT.md       # ビジネス文脈（CEO参照）

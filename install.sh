@@ -8,7 +8,6 @@ set -euo pipefail
 #   ./install.sh                    # Install all agents
 #   ./install.sh nexus rally builder # Install specific agents
 #   ./install.sh --with-mcp         # Install agents + setup MCP servers
-#   ./install.sh --with-cloud       # Install agents + cloud execution scripts
 
 REPO="luna-matching/agent-orchestrator"
 BRANCH="main"
@@ -18,12 +17,10 @@ ALL_AGENTS="analyst anvil architect arena artisan atlas auditor bard bolt bridge
 
 # Parse flags
 WITH_MCP=false
-WITH_CLOUD=false
 AGENT_ARGS=()
 for arg in "$@"; do
   case "$arg" in
     --with-mcp) WITH_MCP=true ;;
-    --with-cloud) WITH_CLOUD=true ;;
     *) AGENT_ARGS+=("$arg") ;;
   esac
 done
