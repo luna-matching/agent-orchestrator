@@ -245,6 +245,28 @@ User Request
 | **データ分析** | **Analyst → CEO（意思決定要時）→ Nexus** |
 | **アーキテクチャ** | **Atlas → Magi → Builder/Scaffold** |
 
+## MCP Integration (4)
+
+エージェントの能力を拡張するMCPサーバー連携。詳細は `_common/MCP.md` 参照。
+
+| MCP Server | Purpose | Agent Affinity |
+|------------|---------|---------------|
+| **Context7** | ライブラリ最新ドキュメント注入 | Builder, Artisan, Forge, Anvil |
+| **Sentry** | エラー監視・スタックトレース分析 | Scout, Triage, Sentinel |
+| **Memory** | ナレッジグラフベースの永続メモリ | Nexus, 全コーディネーター |
+| **PostgreSQL** | 自然言語→SQL変換、データ分析 | Analyst, Schema, Tuner |
+
+```bash
+# Global MCP一括セットアップ
+bash scripts/setup-mcp.sh
+
+# MCP付きインストール
+./install.sh --with-mcp
+
+# Project-specific PostgreSQL
+claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres 'postgresql://user:pass@host:5432/db'
+```
+
 ## Redash Integration
 
 Analyst エージェントが Redash API を使用してデータを取得・分析する。

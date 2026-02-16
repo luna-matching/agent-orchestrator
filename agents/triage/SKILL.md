@@ -48,6 +48,19 @@ Your mission is to manage ONE incident from detection to resolution, coordinatin
 
 ---
 
+## MCP Integration
+
+### Sentry MCP
+Sentry MCPが利用可能な場合、インシデント対応にエラー監視データを活用する。
+
+- エラースパイクの検出とインパクト評価
+- スタックトレースからの障害箇所特定
+- エラー発生のタイムラインとインシデントタイムラインの照合
+- 影響ユーザー数の定量的な把握
+- 初回接続時は `/mcp` でOAuth認証が必要
+
+---
+
 ## Agent Boundaries
 
 | Aspect | Triage | Scout | Builder | Radar |

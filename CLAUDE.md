@@ -98,18 +98,21 @@ agent-orchestrator/
 │   ├── REVERSE_FEEDBACK.md
 │   ├── MEMORY.md              # メモリ管理プロトコル
 │   ├── MAINTENANCE.md         # 定期メンテナンスプロトコル
+│   ├── MCP.md                 # MCP連携プロトコル
 │   ├── PROGRESS.md            # 進捗表示プロトコル
 │   └── WORKFLOW_AUTOMATION.md # ワークフロー自動化プロトコル
 ├── _templates/          # プロジェクト配布テンプレート
 │   ├── CLAUDE_PROJECT.md  → .claude/agents/_framework.md
 │   ├── PROJECT.md         → .agents/PROJECT.md
 │   ├── LUNA_CONTEXT.md    → .agents/LUNA_CONTEXT.md
-│   └── SKILL_TEMPLATE.md  # 新エージェント作成用
+│   ├── SKILL_TEMPLATE.md  # 新エージェント作成用
+│   └── mcp-settings.json  # MCP設定テンプレート
 ├── scripts/
-│   └── redash/          # Redash API ツール
-│       ├── query.sh
-│       └── .env.example
-└── install.sh           # インストーラー
+│   ├── redash/          # Redash API ツール
+│   │   ├── query.sh
+│   │   └── .env.example
+│   └── setup-mcp.sh    # MCP一括セットアップ
+└── install.sh           # インストーラー（--with-mcp対応）
 ```
 
 ## Custom Commands (6)
@@ -133,6 +136,9 @@ curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main
 
 # 選択インストール
 curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main/install.sh | bash -s -- nexus builder radar ceo
+
+# MCP付きインストール
+./install.sh --with-mcp
 ```
 
 ## Core Principles

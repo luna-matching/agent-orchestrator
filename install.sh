@@ -7,6 +7,7 @@ set -euo pipefail
 #   curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main/install.sh | bash -s -- nexus rally builder radar
 #   ./install.sh                    # Install all agents
 #   ./install.sh nexus rally builder # Install specific agents
+#   ./install.sh --with-mcp         # Install agents + setup MCP servers
 
 REPO="luna-matching/agent-orchestrator"
 BRANCH="main"
@@ -14,8 +15,18 @@ BRANCH="main"
 # All 67 agents (65 simota + 2 Luna originals: ceo, analyst)
 ALL_AGENTS="analyst anvil architect arena artisan atlas bard bolt bridge builder canon canvas ceo cipher compete director echo experiment flow forge gateway gear grove growth guardian harvest hone horizon judge launch lens magi morph muse navigator nexus palette polyglot probe pulse quill radar rally reel researcher retain rewind ripple scaffold schema scout scribe sentinel sherpa showcase spark specter stream sweep trace triage tuner vision voice voyager warden zen"
 
-# Default: install all if no args
-AGENTS="${@:-$ALL_AGENTS}"
+# Parse flags
+WITH_MCP=false
+AGENT_ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --with-mcp) WITH_MCP=true ;;
+    *) AGENT_ARGS+=("$arg") ;;
+  esac
+done
+
+# Default: install all if no agent args
+AGENTS="${AGENT_ARGS[*]:-$ALL_AGENTS}"
 
 echo "=== Agent Orchestrator Installer ==="
 echo "Source: github.com/${REPO}"
@@ -36,7 +47,7 @@ git clone --depth 1 --branch "$BRANCH" "https://github.com/${REPO}.git" "$TMPDIR
 INSTALLED=0
 SKIPPED=0
 
-echo "[1/6] Installing agent definitions..."
+echo "[1/8] Installing agent definitions..."
 for agent in $AGENTS; do
   if [ -d "$TMPDIR/agents/$agent" ]; then
     # Copy SKILL.md as flat file for Claude Code agent discovery
@@ -54,7 +65,7 @@ for agent in $AGENTS; do
   fi
 done
 
-echo "[2/6] Installing custom commands..."
+echo "[2/8] Installing custom commands..."
 COMMANDS_INSTALLED=0
 for cmd_file in "$TMPDIR"/commands/*.md; do
   if [ -f "$cmd_file" ]; then
@@ -65,10 +76,10 @@ for cmd_file in "$TMPDIR"/commands/*.md; do
   fi
 done
 
-echo "[3/6] Downloading framework protocol..."
+echo "[3/8] Downloading framework protocol..."
 cp "$TMPDIR/_templates/CLAUDE_PROJECT.md" ".claude/agents/_framework.md"
 
-echo "[4/6] Setting up shared knowledge..."
+echo "[4/8] Setting up shared knowledge..."
 if [ ! -f ".agents/PROJECT.md" ]; then
   cp "$TMPDIR/_templates/PROJECT.md" ".agents/PROJECT.md"
   echo "  -> Created .agents/PROJECT.md"
@@ -76,7 +87,7 @@ else
   echo "  -> .agents/PROJECT.md already exists, skipping"
 fi
 
-echo "[5/6] Setting up business context..."
+echo "[5/8] Setting up business context..."
 if [ ! -f ".agents/LUNA_CONTEXT.md" ]; then
   cp "$TMPDIR/_templates/LUNA_CONTEXT.md" ".agents/LUNA_CONTEXT.md"
   echo "  -> Created .agents/LUNA_CONTEXT.md (customize for your project)"
@@ -84,7 +95,23 @@ else
   echo "  -> .agents/LUNA_CONTEXT.md already exists, skipping"
 fi
 
-echo "[6/6] Checking CLAUDE.md..."
+echo "[6/8] Copying MCP scripts and templates..."
+mkdir -p .claude/scripts
+if [ -f "$TMPDIR/scripts/setup-mcp.sh" ]; then
+  cp "$TMPDIR/scripts/setup-mcp.sh" ".claude/scripts/setup-mcp.sh"
+  chmod +x ".claude/scripts/setup-mcp.sh"
+  echo "  -> Copied scripts/setup-mcp.sh"
+else
+  echo "  [WARN] scripts/setup-mcp.sh not found in repo, skipping"
+fi
+if [ -f "$TMPDIR/_templates/mcp-settings.json" ]; then
+  cp "$TMPDIR/_templates/mcp-settings.json" ".claude/mcp-settings.template.json"
+  echo "  -> Copied mcp-settings.template.json"
+else
+  echo "  [WARN] _templates/mcp-settings.json not found in repo, skipping"
+fi
+
+echo "[7/8] Checking CLAUDE.md..."
 if [ -f "CLAUDE.md" ]; then
   if grep -q "Agent Orchestrator" CLAUDE.md 2>/dev/null; then
     echo "  -> CLAUDE.md already has framework reference, skipping"
@@ -172,3 +199,23 @@ echo "  /code-simplifier 直近の変更をクリーンアップして"
 echo "  /playground マークダウンエディタを作って"
 echo "  /chrome このページのデータを収集して"
 echo "  /pr-review #123"
+echo ""
+echo "MCP Integration:"
+echo "  # Global MCP setup (recommended)"
+echo "  bash scripts/setup-mcp.sh"
+echo ""
+echo "  # Project-specific PostgreSQL MCP"
+echo "  claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres 'postgresql://user:pass@host:5432/db'"
+
+echo ""
+echo "[8/8] MCP setup..."
+if [ "$WITH_MCP" = true ]; then
+  if [ -f ".claude/scripts/setup-mcp.sh" ]; then
+    echo "  -> Running MCP setup (--with-mcp flag detected)..."
+    bash ".claude/scripts/setup-mcp.sh"
+  else
+    echo "  [WARN] .claude/scripts/setup-mcp.sh not found, skipping MCP setup"
+  fi
+else
+  echo "  -> Skipped (use --with-mcp to auto-setup)"
+fi
