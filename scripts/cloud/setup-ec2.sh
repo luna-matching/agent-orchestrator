@@ -61,14 +61,24 @@ else
   log_ok "Node.js $(node --version) installed"
 fi
 
-# --- 4. Python 3.11+ ---
-if python3 --version 2>/dev/null | grep -qE '3\.(1[1-9]|[2-9][0-9])'; then
-  log_skip "Python 3.11+ already available ($(python3 --version))"
+# --- 4. Python 3.12 ---
+# NOTE: python3 (system default) は dnf が依存するため変更しない。
+#       python3.12 コマンドとして別途インストールし、プロジェクトは python3.12 / uv を使う。
+if command -v python3.12 &>/dev/null; then
+  log_skip "Python 3.12 already installed ($(python3.12 --version))"
 else
-  log "Installing Python 3.11..."
-  sudo dnf install -y python3.11 python3.11-pip >> "$LOG_FILE" 2>&1
-  sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 >> "$LOG_FILE" 2>&1 || true
-  log_ok "Python installed"
+  log "Installing Python 3.12..."
+  sudo dnf install -y python3.12 python3.12-pip >> "$LOG_FILE" 2>&1
+  log_ok "Python 3.12 installed (python3.12 コマンドで使用。python3 は dnf 用に維持)"
+fi
+
+# --- 4b. uv (Python package manager) ---
+if command -v uv &>/dev/null || [ -f ~/.local/bin/uv ]; then
+  log_skip "uv already installed"
+else
+  log "Installing uv..."
+  pip3.12 install --user uv >> "$LOG_FILE" 2>&1
+  log_ok "uv installed"
 fi
 
 # --- 5. Docker ---
@@ -167,7 +177,7 @@ fi
 # --- Summary ---
 log ""
 log "=== Setup Complete ==="
-log "Installed: tmux, git, htop, jq, node, python3, docker, aws-cli"
+log "Installed: tmux, git, htop, jq, node, python3.12, uv, docker, aws-cli"
 log "Directories: ~/work, ~/logs, ~/bin"
 log "Log rotation: 30-day retention (cron daily 03:00)"
 log "Setup log: $LOG_FILE"

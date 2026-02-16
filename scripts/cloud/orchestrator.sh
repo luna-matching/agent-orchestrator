@@ -250,6 +250,66 @@ cmd_ssh() {
   remote_tty "cd ${CLOUD_WORK_DIR} 2>/dev/null; exec bash -l"
 }
 
+cmd_up() {
+  local instance_id="${EC2_INSTANCE_ID:?EC2_INSTANCE_ID が未設定です。.env を確認してください}"
+  local region="${AWS_REGION:-ap-northeast-1}"
+  local aws_cmd="aws"
+  [ -n "${AWS_PROFILE:-}" ] && aws_cmd="aws --profile $AWS_PROFILE"
+
+  echo -e "${CYAN}EC2 インスタンスを起動中: ${BOLD}${instance_id}${NC}"
+
+  if ! $aws_cmd ec2 start-instances --instance-ids "$instance_id" --region "$region" --output text > /dev/null 2>&1; then
+    echo -e "${RED}エラー: EC2の起動に失敗しました${NC}"
+    echo "  AWS CLIにEC2権限があるか確認してください"
+    echo "  .env に AWS_PROFILE を設定するか、aws configure で設定してください"
+    exit 1
+  fi
+  echo -e "  起動リクエスト送信済み。SSH可能になるまで待機中..."
+
+  # Wait until running
+  aws ec2 wait instance-running --instance-ids "$instance_id" --region "$region" 2>/dev/null
+
+  # Wait for SSH
+  local retries=0
+  while [ $retries -lt 30 ]; do
+    if ssh -oLogLevel=ERROR -oConnectTimeout=3 -oBatchMode=yes ${CLOUD_USER}@${CLOUD_HOST} "echo ok" > /dev/null 2>&1; then
+      echo ""
+      echo -e "${GREEN}EC2 起動完了${NC}"
+      echo -e "  ${CYAN}orch status${NC}   # ステータス確認"
+      echo -e "  ${CYAN}orch ssh${NC}      # SSH接続"
+      return 0
+    fi
+    retries=$((retries + 1))
+    sleep 2
+  done
+
+  echo -e "${YELLOW}EC2は起動しましたが、SSH接続がまだ利用できません。しばらく待ってから再試行してください。${NC}"
+}
+
+cmd_down() {
+  local instance_id="${EC2_INSTANCE_ID:?EC2_INSTANCE_ID が未設定です。.env を確認してください}"
+  local region="${AWS_REGION:-ap-northeast-1}"
+
+  # Check for running jobs
+  local sessions
+  sessions=$(remote "tmux list-sessions -F '#{session_name}' 2>/dev/null" 2>/dev/null || true)
+  if [ -n "$sessions" ]; then
+    echo -e "${YELLOW}警告: 以下のジョブが稼働中です:${NC}"
+    echo "$sessions" | while read -r s; do echo "  - $s"; done
+    echo ""
+    echo -e "${RED}実行中のジョブがあります。先に停止してください:${NC}"
+    echo "  orch stop <name>"
+    exit 1
+  fi
+
+  echo -e "${CYAN}EC2 インスタンスを停止中: ${BOLD}${instance_id}${NC}"
+  remote "sudo shutdown -h now" 2>/dev/null || true
+
+  echo -e "${GREEN}シャットダウンコマンド送信済み${NC}"
+  echo "  インスタンスは数秒後に停止します。"
+  echo -e "  再起動: ${CYAN}orch up${NC}"
+}
+
 cmd_help() {
   cat << 'HELP'
 Cloud Job Orchestrator - クラウドジョブ管理CLI
@@ -265,15 +325,18 @@ Commands:
   status                稼働中のジョブ一覧
   list                  全ジョブ履歴
   ssh                   EC2にSSH接続
+  up                    EC2インスタンスを起動
+  down                  EC2インスタンスを停止（稼働ジョブなし時のみ）
   help                  このヘルプを表示
 
 Examples:
+  orch up                                          # EC2起動
   orch run my-build "cd ~/work/project && npm run build"
-  orch run lros-train "cd ~/work/lros && python train.py"
   orch logs my-build -f
   orch attach my-build
   orch status
   orch stop my-build
+  orch down                                        # EC2停止
 
 Configuration:
   Edit scripts/cloud/.env (copy from .env.example)
@@ -293,6 +356,8 @@ case "$COMMAND" in
   status) cmd_status ;;
   list)   cmd_list ;;
   ssh)    cmd_ssh ;;
+  up|start)   cmd_up ;;
+  down|shutdown) cmd_down ;;
   help|--help|-h) cmd_help ;;
   *)
     echo -e "${RED}不明なコマンド: ${COMMAND}${NC}"

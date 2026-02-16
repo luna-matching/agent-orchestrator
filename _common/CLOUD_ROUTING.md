@@ -106,12 +106,15 @@ Examples:
 
 | Command | Description |
 |---------|-------------|
+| `orch up` | EC2インスタンスを起動（SSH可能まで待機） |
+| `orch down` | EC2インスタンスを停止（稼働ジョブなし時のみ） |
 | `orch run <name> <cmd>` | クラウドでジョブ起動（tmux detach） |
 | `orch logs <name> [-f]` | ログ表示（-f でフォロー） |
 | `orch attach <name>` | tmuxセッションにアタッチ |
 | `orch stop <name>` | ジョブ停止（tmux kill-session） |
 | `orch status` | 稼働中ジョブ一覧 |
 | `orch list` | 全ジョブ履歴（ログディレクトリ） |
+| `orch ssh` | EC2にSSH接続 |
 
 Configuration: `scripts/cloud/.env`
 
@@ -153,12 +156,90 @@ Rally による並列実行では、複数ジョブをクラウド上の個別tm
 
 ---
 
+## Auto-Routing Decision Protocol
+
+Nexus/Rally がタスクを受けた時、以下のアルゴリズムで実行先を自動判定する。
+
+### Step 1: Agent Affinity Check
+
+タスクを担当するエージェントのデフォルト実行先を確認する。
+
+```
+agent_affinity = lookup(agent_name, AFFINITY_TABLE)
+if agent_affinity == "local":
+    return LOCAL  # 判断系・読み取り系は常にローカル
+```
+
+### Step 2: Task Signal Scoring
+
+以下のシグナルを評価し、スコアを加算する。**スコア >= 2 ならクラウド実行。**
+
+| Signal | Score | Detection Method |
+|--------|-------|------------------|
+| コマンドに `build`, `install`, `compile` を含む | +2 | keyword match |
+| コマンドに `train`, `backfill`, `migrate`, `scrape` を含む | +2 | keyword match |
+| コマンドに `pytest`, `test`, `vitest`, `jest` を含む | +1 | keyword match |
+| コマンドに `docker`, `npm run`, `uv sync` を含む | +1 | keyword match |
+| `watch`, `dev`, `serve` を含む（長時間プロセス） | +2 | keyword match |
+| 並列ジョブ数が現在 >= 1（追加実行） | +2 | `orch status` check |
+| 処理対象のデータ量が不明 or 大 | +1 | context estimation |
+| ユーザーが明示的に `cloud:` プレフィックスを付けた | +3 | prefix check |
+| ユーザーが明示的に `local:` プレフィックスを付けた | -10 | prefix check |
+
+### Step 3: Execution
+
+```
+if score >= 2:
+    # Cloud execution
+    job_name = generate_job_name(project, task)
+    execute: orch run <job_name> "<command>"
+    monitor: orch logs <job_name> -f
+else:
+    # Local execution
+    execute locally as normal
+```
+
+### Decision Examples
+
+| Task | Signals | Score | Result |
+|------|---------|-------|--------|
+| `cd lros/backend && uv run pytest` | pytest(+1), uv(+1) | 2 | **Cloud** |
+| `npm run build` | build(+2), npm(+1) | 3 | **Cloud** |
+| `git status` | (none) | 0 | **Local** |
+| `python train.py --epochs 100` | train(+2) | 2 | **Cloud** |
+| CEO判断タスク | agent=CEO(local) | - | **Local** |
+| `cloud: ruff check .` | cloud prefix(+3) | 3 | **Cloud** |
+| `local: npm run build` | local prefix(-10), build(+2) | -8 | **Local** |
+
+### Nexus Implementation
+
+Nexus がタスクを受けた時のルーティング判定テンプレート:
+
+```
+## ルーティング判定
+
+タスク: [タスク内容]
+担当エージェント: [agent_name]
+
+### Agent Affinity: [cloud/local/depends]
+### Signal Score:
+- [signal1]: +N
+- [signal2]: +N
+- Total: N
+
+### 判定: [CLOUD/LOCAL]
+### 実行: [orch run ... / ローカル実行]
+```
+
+---
+
 ## Quick Reference
 
 ```yaml
 # Nexus decision template
 CLOUD_ROUTING:
   default: cloud
+  score_threshold: 2
   force_cloud:
     - runtime_estimate > 10min
     - heavy_log_output
@@ -168,4 +249,11 @@ CLOUD_ROUTING:
     - memory_unknown
   allow_local:
     - runtime_estimate <= 3min AND ui_centric AND lightweight_check
+    - agent_affinity == local
+  keywords_cloud:
+    - build, install, compile, train, backfill, migrate, scrape
+    - watch, dev, serve, docker, pytest, test
+  user_override:
+    - "cloud:" prefix → force cloud
+    - "local:" prefix → force local
 ```
