@@ -52,7 +52,7 @@ User Request
 | 機能開発(中) | Sherpa → Forge → Builder → Radar |
 | 機能開発(大) | Sherpa → Rally(Builder + Artisan + Radar) |
 | リファクタリング | Zen → Radar |
-| セキュリティ監査 | Sentinel → Probe → Builder → Radar |
+| セキュリティ監査 | Sentinel → Builder → Radar |
 | PR準備 | Guardian → Judge |
 | ビジネス/戦略 | CEO → Sherpa → Forge/Builder → Radar |
 | データ分析 | Analyst → CEO（意思決定要時）→ Nexus（施策化） |

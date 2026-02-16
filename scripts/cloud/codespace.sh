@@ -195,6 +195,22 @@ cmd_list() {
 
   echo -e "${BOLD}=== Codespaces ===${NC}"
   echo ""
+
+  local codespaces
+  codespaces=$(gh codespace list --json name,state,repository,machineName,lastUsedAt 2>/dev/null)
+
+  if [ -z "$codespaces" ] || [ "$codespaces" = "[]" ]; then
+    echo -e "${YELLOW}Codespace はありません${NC}"
+    return
+  fi
+
+  printf "${BOLD}%-35s %-12s %-30s %-15s %s${NC}\n" "NAME" "STATE" "REPOSITORY" "MACHINE" "LAST USED"
+  echo "────────────────────────────────────────────────────────────────────────────────────────────────────"
+
+  echo "$codespaces" | gh codespace list --json name,state,repository,machineName,lastUsedAt \
+    2>/dev/null || true
+
+  # Fallback: simple list
   gh codespace list 2>/dev/null || echo -e "${RED}一覧の取得に失敗しました${NC}"
 }
 

@@ -6,18 +6,7 @@ Cloud-first 実行基盤によるタスクルーティングプロトコル。
 
 ## Overview
 
-ローカル環境（48GB Mac）のメモリ制約を回避するため、重い処理をクラウド（Codespaces/EC2）に自動ルーティングする。Nexus/Rally がタスクを受けた時、実行先を判断するルールを定義する。
-
----
-
-## Provider Selection
-
-プロジェクトごとに `scripts/cloud/.env` の `CLOUD_PROVIDER` でプロバイダを切り替える。
-
-| Provider | Best For | Cost Model |
-|----------|----------|------------|
-| codespaces | GitHub連携、ゼロ運用、短時間ジョブ | $0.36-1.44/hr + storage |
-| ec2 | 長時間実行、GPU、カスタム環境 | インスタンス時間課金 |
+ローカル環境（48GB Mac）のメモリ制約を回避するため、重い処理をGitHub Codespacesに自動ルーティングする。Nexus/Rally がタスクを受けた時、実行先を判断するルールを定義する。
 
 ---
 
@@ -67,16 +56,14 @@ User Request
      v
   Cloud Execution:
      |
-     +-- cloud start（未作成の場合）
-     +-- cloud run <command>（クラウドでコマンド実行）
+     +-- gh codespace create（未作成の場合）
+     +-- cs run <command>（Codespace内でコマンド実行）
      +-- 完了通知（stdout）
 ```
 
 ---
 
 ## Cloud Job Lifecycle
-
-### Codespaces
 
 | State | Description |
 |-------|-------------|
@@ -86,16 +73,6 @@ User Request
 | DONE | 正常完了 |
 | FAILED | 失敗（ログ参照） |
 | STOPPED | 手動停止（課金停止） |
-
-### EC2
-
-| State | Description |
-|-------|-------------|
-| stopped | インスタンス停止中 |
-| pending | インスタンス起動中 |
-| running | インスタンス稼働中 |
-| (job via tmux) | tmuxセッションでジョブ実行中 |
-| stopping | インスタンス停止処理中 |
 
 ---
 

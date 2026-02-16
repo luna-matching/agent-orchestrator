@@ -35,17 +35,13 @@ your-project/
 │   │   │   └── references/
 │   │   └── atlas/
 │   │       └── references/
-│   ├── commands/
-│   │   ├── superpowers.md    # 大規模タスク向けTDD+検証モード
-│   │   ├── frontend-design.md # 洗練されたUI設計
-│   │   ├── code-simplifier.md # 動作不変のコードクリーンアップ
-│   │   ├── playground.md     # 単一HTML生成
-│   │   ├── chrome.md         # ブラウザ操作自動化
-│   │   └── pr-review.md     # 多面的PRレビュー
-│   └── scripts/
-│       └── cloud/
-│           ├── codespace.sh      # Codespaces CLIラッパー
-│           └── .env.example      # 設定テンプレート
+│   └── commands/
+│       ├── superpowers.md    # 大規模タスク向けTDD+検証モード
+│       ├── frontend-design.md # 洗練されたUI設計
+│       ├── code-simplifier.md # 動作不変のコードクリーンアップ
+│       ├── playground.md     # 単一HTML生成
+│       ├── chrome.md         # ブラウザ操作自動化
+│       └── pr-review.md     # 多面的PRレビュー
 ├── .agents/
 │   ├── PROJECT.md            # 共有知識ファイル
 │   └── LUNA_CONTEXT.md       # ビジネス文脈（CEO参照）
@@ -255,59 +251,47 @@ User Request
 
 ## Cloud Execution
 
-ローカル環境のメモリ制約を回避するため、重い処理をクラウドに自動ルーティングする。プロジェクトごとにプロバイダを選択可能。詳細は `docs/CLOUD_ARCHITECTURE.md` 参照。
+ローカル環境のメモリ制約を回避するため、重い処理をGitHub Codespacesに自動ルーティングする。詳細は `docs/CLOUD_ARCHITECTURE.md` 参照。
 
-### Provider Selection
+### Routing Rule
 
-| Use Case | Provider | Reason |
-|----------|----------|--------|
-| 短時間ジョブ（ビルド、テスト） | Codespaces | 自動サスペンド、ゼロ運用 |
-| 長時間プロセス（学習、バッチ） | EC2 | 安定性、tmuxセッション |
-| GPU必要（ML/AI） | EC2 | GPUインスタンス |
-| 新規プロジェクト | Codespaces | セットアップゼロ |
+| Condition | Execution |
+|-----------|-----------|
+| 実行見込み10分超 | Cloud |
+| 大量ログ出力 | Cloud |
+| LLM/embedding/スクレイピング/バックフィル | Cloud |
+| 並列2本以上 | Cloud |
+| メモリ推定8GB超 | Cloud |
+| 短時間スクリプト（3分以内） | Local |
+| UI操作中心 | Local |
 
 ### Quick Start
 
 ```bash
-# 1. 設定
+# 1. 設定（初回のみ）
 cp scripts/cloud/.env.example scripts/cloud/.env
-# CLOUD_PROVIDER=codespaces or ec2 を設定
 
-# 2. Codespaces の場合
-cloud start --repo luna-matching/lros
-cloud run "cd /workspaces/lros && npm run build"
+# 2. Codespace作成
+bash scripts/cloud/codespace.sh create --repo luna-matching/your-project --machine 4-core
 
-# 3. EC2 の場合（EC2_HOST等を設定後）
-cloud start
-cloud run "cd ~/work/project && npm run build"
-
-# 4. 共通
-cloud status
-cloud stop
+# 3. コマンド実行
+bash scripts/cloud/codespace.sh run "cd /workspaces/project && npm run build"
+bash scripts/cloud/codespace.sh status
+bash scripts/cloud/codespace.sh ssh
+bash scripts/cloud/codespace.sh stop
 ```
 
 ### CLI Commands
 
 | Command | Description |
 |---------|-------------|
-| `cloud run <cmd>` | クラウドでコマンド実行 |
-| `cloud ssh` | クラウドにSSH接続 |
-| `cloud status` | リソース状態確認 |
-| `cloud start` | リソース起動 |
-| `cloud stop` | リソース停止（課金停止） |
-| `cloud list` | ジョブ一覧 |
-| `cloud logs <name> [-f]` | ログ表示（EC2のみ） |
-| `cloud provider` | 現在のプロバイダ表示 |
-
-### devcontainer
-
-Codespaces 利用時は `.devcontainer/devcontainer.json` が自動配置される（install.sh で）。カスタマイズは `_templates/devcontainer.json` を参照。
-
-### Billing Alert (EC2)
-
-```bash
-bash scripts/cloud/setup-billing-alert.sh user@example.com 100
-```
+| `cs create [--repo OWNER/REPO]` | Codespace作成 |
+| `cs run <command>` | Codespace内でコマンド実行 |
+| `cs ssh` | CodespaceにSSH接続 |
+| `cs list` | Codespace一覧 |
+| `cs stop [name]` | Codespace停止（課金停止） |
+| `cs delete [name]` | Codespace削除 |
+| `cs status` | Codespace状態確認 |
 
 ## MCP Integration (5)
 
