@@ -6,7 +6,7 @@ Cloud-first 実行基盤によるタスクルーティングプロトコル。
 
 ## Overview
 
-ローカル環境（48GB Mac）のメモリ制約を回避するため、重い処理をAWS EC2に自動ルーティングする。Nexus/Rally がタスクを受けた時、実行先を判断するルールを定義する。
+ローカル環境（48GB Mac）のメモリ制約を回避するため、重い処理をGitHub Codespacesに自動ルーティングする。Nexus/Rally がタスクを受けた時、実行先を判断するルールを定義する。
 
 ---
 
@@ -46,20 +46,19 @@ Cloud-first 実行基盤によるタスクルーティングプロトコル。
 User Request
      |
      v
-  [Nexus] ── タスク分類
+  [Nexus] -- タスク分類
      |
-     +── SIMPLE? ──→ 実行見込み3分以内？ ──→ YES → ローカル実行
+     +-- SIMPLE? --> 実行見込み3分以内？ --> YES → ローカル実行
      |                                   └→ NO  → クラウド実行
      |
-     +── COMPLEX? ──→ デフォルトでクラウド実行
+     +-- COMPLEX? --> デフォルトでクラウド実行
      |
      v
   Cloud Execution:
      |
-     +── SSH to EC2
-     +── tmux new-session -d -s <job-name>
-     +── コマンド実行 + ログ記録
-     +── 完了通知（Slack or stdout）
+     +-- gh codespace create（未作成の場合）
+     +-- cs run <command>（Codespace内でコマンド実行）
+     +-- 完了通知（stdout）
 ```
 
 ---
@@ -68,12 +67,12 @@ User Request
 
 | State | Description |
 |-------|-------------|
-| QUEUED | 投入待ち |
-| STARTING | EC2でtmuxセッション起動中 |
-| RUNNING | 実行中 |
+| CREATING | Codespace作成中 |
+| AVAILABLE | Codespace起動済み・実行可能 |
+| RUNNING | コマンド実行中 |
 | DONE | 正常完了 |
 | FAILED | 失敗（ログ参照） |
-| STOPPED | 手動停止 |
+| STOPPED | 手動停止（課金停止） |
 
 ---
 
@@ -86,7 +85,7 @@ Examples:
 - `vma-scrape-20260216-0900`
 - `coupon-aggregate-20260216-1100`
 
-短縮名も許容（`my-job`, `test-run` など）。ただしtmuxセッション名として有効な文字列であること。
+短縮名も許容（`my-job`, `test-run` など）。
 
 ---
 
@@ -94,11 +93,10 @@ Examples:
 
 | Item | Value |
 |------|-------|
-| Path | `~/logs/<job-name>/run.log` |
-| Format | stdout + stderr を tee でファイルに記録 |
-| Retention | 30日（cron で自動削除） |
-| CloudWatch | オプション（重要ジョブのみ） |
-| Exit code | ログ末尾に `[EXIT: N]` を記録 |
+| Path | Codespace内の標準出力（`cs run` で取得） |
+| Format | stdout + stderr をローカルにリダイレクト可能 |
+| Retention | Codespace停止後7日（設定可能） |
+| Exit code | コマンド終了時に表示 |
 
 ---
 
@@ -106,15 +104,13 @@ Examples:
 
 | Command | Description |
 |---------|-------------|
-| `orch up` | EC2インスタンスを起動（SSH可能まで待機） |
-| `orch down` | EC2インスタンスを停止（稼働ジョブなし時のみ） |
-| `orch run <name> <cmd>` | クラウドでジョブ起動（tmux detach） |
-| `orch logs <name> [-f]` | ログ表示（-f でフォロー） |
-| `orch attach <name>` | tmuxセッションにアタッチ |
-| `orch stop <name>` | ジョブ停止（tmux kill-session） |
-| `orch status` | 稼働中ジョブ一覧 |
-| `orch list` | 全ジョブ履歴（ログディレクトリ） |
-| `orch ssh` | EC2にSSH接続 |
+| `cs create [--repo OWNER/REPO]` | Codespace作成 |
+| `cs run <command>` | Codespace内でコマンド実行 |
+| `cs ssh` | CodespaceにSSH接続 |
+| `cs list` | Codespace一覧 |
+| `cs stop [name]` | Codespace停止（課金停止） |
+| `cs delete [name]` | Codespace削除 |
+| `cs status` | Codespace状態確認 |
 
 Configuration: `scripts/cloud/.env`
 
@@ -129,14 +125,14 @@ AUTORUN_FULL モードでは、Nexus がタスク分類時にルーティング�
 ### GUARDRAIL
 
 クラウドジョブにもガードレール L1-L4 が適用される：
-- L1: ログ監視（CloudWatch or orch logs）
+- L1: ログ監視（`cs run` の出力確認）
 - L2: 自動リトライ（ジョブ再実行）
-- L3: ロールバック（git reset on EC2）
-- L4: 即時停止（orch stop + 通知）
+- L3: ロールバック（git reset on Codespace）
+- L4: 即時停止（`cs stop` + 通知）
 
 ### PARALLEL
 
-Rally による並列実行では、複数ジョブをクラウド上の個別tmuxセッションとして管理する。File ownership はローカルと同じルールが適用される。
+Rally による並列実行では、複数ジョブをCodespace内で順次またはバックグラウンド実行する。File ownership はローカルと同じルールが適用される。
 
 ---
 
@@ -181,7 +177,7 @@ if agent_affinity == "local":
 | コマンドに `pytest`, `test`, `vitest`, `jest` を含む | +1 | keyword match |
 | コマンドに `docker`, `npm run`, `uv sync` を含む | +1 | keyword match |
 | `watch`, `dev`, `serve` を含む（長時間プロセス） | +2 | keyword match |
-| 並列ジョブ数が現在 >= 1（追加実行） | +2 | `orch status` check |
+| 並列ジョブ数が現在 >= 1（追加実行） | +2 | `cs status` check |
 | 処理対象のデータ量が不明 or 大 | +1 | context estimation |
 | ユーザーが明示的に `cloud:` プレフィックスを付けた | +3 | prefix check |
 | ユーザーが明示的に `local:` プレフィックスを付けた | -10 | prefix check |
@@ -192,8 +188,8 @@ if agent_affinity == "local":
 if score >= 2:
     # Cloud execution
     job_name = generate_job_name(project, task)
-    execute: orch run <job_name> "<command>"
-    monitor: orch logs <job_name> -f
+    execute: cs run "<command>"
+    monitor: stdout output
 else:
     # Local execution
     execute locally as normal
@@ -228,7 +224,7 @@ Nexus がタスクを受けた時のルーティング判定テンプレート:
 - Total: N
 
 ### 判定: [CLOUD/LOCAL]
-### 実行: [orch run ... / ローカル実行]
+### 実行: [cs run ... / ローカル実行]
 ```
 
 ---
@@ -256,50 +252,4 @@ CLOUD_ROUTING:
   user_override:
     - "cloud:" prefix → force cloud
     - "local:" prefix → force local
-```
-
----
-
-## Codespaces Integration
-
-### Overview
-
-GitHub Codespaces をデフォルトの Cloud 実行環境として使用する。
-EC2 は大容量・長時間ジョブの代替手段として残す。
-
-### When to Use
-
-| Situation | Environment |
-|-----------|-------------|
-| 通常の開発作業 | **Codespaces**（8-core/32GB） |
-| エージェント並列実行 | **Codespaces** |
-| テスト・ビルド | **Codespaces** |
-| 24時間以上の連続実行 | EC2 |
-| GPU必要 | EC2 or Modal |
-
-### Setup
-
-1. GitHub リポジトリに `.devcontainer/` を配置（テンプレート: `_templates/devcontainer/`）
-2. GitHub Settings → Codespaces → Secrets に `ANTHROPIC_API_KEY` を設定
-3. `gh cs create -m largePremiumLinux` で 8-core/32GB を起動
-4. `gh cs ssh` で接続、`claude` でClaude Code起動
-
-### Cost
-
-| Machine | Spec | Cost/hr | 月額目安（3h/日×22日） |
-|---------|------|---------|---------------------|
-| 4-core | 16GB RAM | $0.36 | ~$24 |
-| 8-core | 32GB RAM | $0.72 | ~$48 |
-| 16-core | 64GB RAM | $1.44 | ~$95 |
-
-※アイドル30分で自動サスペンド。サスペンド中はストレージのみ課金（$0.07/GB/月）。
-
-### CLI Quick Reference
-
-```bash
-gh cs create -r luna-matching/has -m largePremiumLinux  # 作成
-gh cs list                                               # 一覧
-gh cs ssh -c <codespace-name>                            # SSH接続
-gh cs stop -c <codespace-name>                           # 停止
-gh cs delete -c <codespace-name>                         # 削除
 ```

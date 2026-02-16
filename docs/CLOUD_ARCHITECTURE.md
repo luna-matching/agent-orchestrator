@@ -8,49 +8,30 @@
 
 ---
 
-## Default: GitHub Codespaces
+## EC2 vs GitHub Codespaces
 
-EC2 の代替として、GitHub Codespaces をデフォルトのCloud実行環境に変更。
+| Criteria | EC2 | GitHub Codespaces |
+|----------|-----|-------------------|
+| インフラ管理 | 自分で構築・運用 | GitHub完全管理（ゼロ運用） |
+| セットアップ | AMI, VPC, SG, SSH key等 | `gh codespace create` のみ |
+| SSH接続 | SSH key管理が必要 | `gh codespace ssh`（認証不要） |
+| 開発環境 | 手動構築 | devcontainer.json で自動 |
+| リポジトリ連携 | deploy key / clone手動 | リポジトリ直結（自動clone） |
+| コスト体系 | 時間課金（停止忘れリスク） | 使用時間課金（自動サスペンド） |
+| スケール | インスタンスタイプ変更（停止必要） | マシンタイプ選択（即座） |
+| CLI統合 | aws CLI + ssh | gh CLI（統一） |
+| Secrets管理 | AWS Secrets Manager | GitHub Codespace Secrets |
+| 自動停止 | 手動 or スクリプト | アイドルタイムアウト（デフォルト30分） |
 
-| 比較項目 | EC2 | Codespaces |
-|---------|-----|-----------|
-| セットアップ | AMI/SG/キーペア/setup-ec2.sh | `.devcontainer/` のみ |
-| 起動 | `orch up` → SSH待ち | `gh cs create` → 即利用 |
-| 停止 | `orch down` / 手動 | 30分アイドルで自動サスペンド |
-| コスト | ~$0.33/hr + 停止忘れリスク | ~$0.72/hr（8-core）自動停止 |
-| インフラ管理 | AWS全般 | なし |
-| Claude Code | 別途インストール | postCreateCommand で自動 |
+### Conclusion: GitHub Codespaces
 
-### Migration
+GitHub Codespaces を選択する理由：
 
-EC2 の `orch` CLI は引き続き利用可能（長時間ジョブ用）。
-日常の開発作業は Codespaces に移行。
-
----
-
-## EC2 vs ECS/Fargate
-
-| Criteria | EC2 | ECS/Fargate |
-|----------|-----|-------------|
-| tmux support | Native | Not available (ephemeral containers) |
-| SSH access | Full | Limited (ECS Exec) |
-| Interactive debug | Easy | Difficult |
-| Persistent state | Yes (EBS) | No (stateless) |
-| Setup complexity | Low | High |
-| Multi-process per instance | Yes | One task per container |
-| Cost (always-on) | Lower | Higher |
-| Existing workflow fit | SSH-based ops | Requires new workflow |
-| Auto-scaling | Manual | Built-in |
-
-### Conclusion: EC2
-
-EC2 is the clear choice for this use case:
-
-1. **tmux is a hard requirement** - ECS/Fargate containers are ephemeral and don't support persistent terminal sessions
-2. **SSH access** - Interactive debugging and job attachment need direct SSH
-3. **Simplicity** - Same-day operational start; no container orchestration overhead
-4. **Cost** - Single instance handles 3+ concurrent jobs efficiently
-5. **Existing workflow** - Team already uses SSH for EC2 deployments
+1. **インフラ管理ゼロ** - VPC, Security Group, AMI, SSH key 等の管理が一切不要
+2. **pay-per-use** - アイドル時に自動サスペンドされ、課金が止まる
+3. **`gh` CLI統合** - 既存のGitHub CLIワークフローに自然に統合
+4. **リポジトリ直結** - Codespace作成時にリポジトリが自動clone・セットアップ
+5. **devcontainer.json** - 環境構成をコードとして管理、再現性100%
 
 ---
 
@@ -58,32 +39,37 @@ EC2 is the clear choice for this use case:
 
 | Component | Spec |
 |-----------|------|
-| Instance | t3.2xlarge (8 vCPU, 32GB RAM) |
-| AMI | Amazon Linux 2023 |
-| Storage | 100GB gp3 EBS |
-| Region | ap-northeast-1 (Tokyo) |
-| Access | SSM Session Manager + SSH |
-| Key management | SSM Parameter Store |
+| Machine (standard) | 4-core / 16GB RAM ($0.36/hr) |
+| Machine (heavy) | 8-core / 32GB RAM ($0.72/hr) |
+| Storage | 64GB（devcontainer.json で指定） |
+| Idle timeout | 30分（自動サスペンド） |
+| Retention | 停止後7日（設定可能） |
+| Image | mcr.microsoft.com/devcontainers/universal:2 |
 
-### Why t3.2xlarge
+### マシンタイプ選択基準
 
-- 32GB RAM handles 3 concurrent jobs (each ~4-10GB)
-- 8 vCPU provides sufficient CPU for parallel execution
-- Burstable (t3) is cost-effective for intermittent heavy workloads
-- Upgrade path: m7g.2xlarge (Graviton, 32GB) for sustained CPU workloads
+| Workload | Machine | Reason |
+|----------|---------|--------|
+| テスト・lint・小規模ビルド | 4-core / 16GB | 十分な性能、低コスト |
+| 並列ジョブ・モデル学習・大規模ビルド | 8-core / 32GB | メモリ余裕あり |
+| 極端に重い処理（稀） | 16-core / 64GB | 必要な場合のみ |
 
 ---
 
 ## Cost Estimate
 
-| Plan | Hourly | Monthly (12hr/day, 22days) |
+| Plan | Hourly | Monthly (3hr/day, 20days) |
 |------|--------|---------------------------|
-| On-demand | ~$0.33 | ~$87 |
-| Reserved 1yr | ~$0.21 | ~$55 |
-| Spot | ~$0.10 | ~$26 (interruptible) |
-| Stop when idle | varies | ~$40-60 (estimated) |
+| 4-core / 16GB | $0.36 | ~$21 |
+| 8-core / 32GB | $0.72 | ~$43 |
+| 16-core / 64GB | $1.44 | ~$86 |
+| Storage (64GB) | - | ~$4.48/月 |
 
-Recommendation: On-demand + stop when not in use. Consider Reserved after usage patterns stabilize.
+EC2比較（参考）:
+- EC2 t3.2xlarge on-demand: ~$87/月（12hr/day, 22days）
+- EC2 + stop when idle: ~$40-60/月
+
+**Codespaces 4-core: ~$21/月、8-core: ~$43/月。EC2より安価かつ運用コストゼロ。**
 
 ---
 
@@ -91,15 +77,15 @@ Recommendation: On-demand + stop when not in use. Consider Reserved after usage 
 
 ```
 ┌─────────────────────────┐            ┌──────────────────────────────┐
-│  Local Mac (48GB)       │            │  AWS EC2 (t3.2xlarge)        │
-│                         │   SSH/SSM  │  32GB RAM / 8 vCPU           │
+│  Local Mac (48GB)       │            │  GitHub Codespace            │
+│                         │   gh CLI   │  4-core/16GB or 8-core/32GB  │
 │  Claude Code (CLI)      │──────────→ │                              │
-│  IDE / Browser          │            │  tmux session: job-a (6GB)   │
-│  Slack                  │            │  tmux session: job-b (4GB)   │
-│                         │ ←──────────│  tmux session: job-c (8GB)   │
+│  IDE / Browser          │            │  Job A: npm run build        │
+│  Slack                  │            │  Job B: pytest               │
+│                         │ ←──────────│  Job C: python train.py      │
 │  Memory: ~8GB used      │  Results   │                              │
-│  CPU: Light             │            │  ~/logs/ → CloudWatch        │
-└─────────────────────────┘            │  ~/work/ → GitHub repos      │
+│  CPU: Light             │            │  Auto-suspend after 30min    │
+└─────────────────────────┘            │  Storage: 64GB               │
                                        └──────────────────────────────┘
 ```
 
@@ -110,44 +96,40 @@ Recommendation: On-demand + stop when not in use. Consider Reserved after usage 
 ### Job A: video-marketing-ai Trend Scraping + Embedding
 
 ```bash
-orch run vma-scrape "cd ~/work/video-marketing-ai && python scripts/trend_scrape.py && python scripts/generate_embeddings.py"
+cs run "cd /workspaces/video-marketing-ai && python scripts/trend_scrape.py && python scripts/generate_embeddings.py"
 ```
 
 - Duration: ~3 hours
 - Memory: ~6GB (embedding model + data)
-- Log: ~/logs/vma-scrape/run.log
 
 ### Job B: coupon-optimization-engine Backfill
 
 ```bash
-orch run coupon-backfill "cd ~/work/coupon-optimization-engine && npm run backfill:all"
+cs run "cd /workspaces/coupon-optimization-engine && npm run backfill:all"
 ```
 
 - Duration: ~1 hour
 - Memory: ~4GB (DB queries + aggregation)
-- Log: ~/logs/coupon-backfill/run.log
 
 ### Job C: LROS Prediction Model Training
 
 ```bash
-orch run lros-train "cd ~/work/lros && python train.py --config prod.yaml && python generate_report.py"
+cs run "cd /workspaces/lros && python train.py --config prod.yaml && python generate_report.py"
 ```
 
 - Duration: ~2 hours
 - Memory: ~8GB (model training + report)
-- Log: ~/logs/lros-train/run.log
 
-### Monitoring All Three
+### Monitoring
 
 ```bash
-orch status
-# NAME             STATE    STARTED              MEMORY
-# vma-scrape       RUNNING  2026-02-16 14:30:00  5.8GB
-# coupon-backfill  RUNNING  2026-02-16 14:35:00  3.2GB
-# lros-train       RUNNING  2026-02-16 14:40:00  7.1GB
+cs status
+# NAME                  STATE      MACHINE        IDLE
+# video-marketing-ai    Available  4-core/16GB    2m
+# coupon-engine         Available  4-core/16GB    5m
+# lros                  Available  8-core/32GB    1m
 
-orch logs vma-scrape --follow    # Stream logs
-orch attach coupon-backfill      # Interactive tmux
+cs ssh   # Codespace にSSH接続して直接確認
 ```
 
 Local Mac stays at ~8GB usage (IDE + browser + Slack). No memory pressure.
@@ -158,29 +140,25 @@ Local Mac stays at ~8GB usage (IDE + browser + Slack). No memory pressure.
 
 | Concern | Mitigation |
 |---------|------------|
-| SSH keys | Store in SSM Parameter Store, not local files |
-| API tokens | AWS Secrets Manager or SSM SecureString |
-| Network | Security Group: restrict SSH to known IPs |
-| Repo access | Deploy key per repo, not personal PAT |
-| Instance access | IAM role with minimum permissions |
+| API keys | GitHub Codespace Secrets（暗号化保存、Codespace内のみ展開） |
+| SSH keys | 不要（`gh codespace ssh` が認証処理） |
+| Repo access | GitHub認証で自動（追加設定不要） |
+| Network | GitHub管理（Security Group設定不要） |
+| Data at rest | GitHub管理のストレージ暗号化 |
 
 ---
 
-## Directory Structure (on EC2)
+## Directory Structure (in Codespace)
 
 ```
-~/
-├── work/                    # Git repos (cloned here)
-│   ├── video-marketing-ai/
-│   ├── coupon-optimization-engine/
-│   ├── lros/
-│   └── has/
-├── logs/                    # Job logs (30-day retention)
-│   ├── vma-scrape/
-│   │   └── run.log
-│   ├── coupon-backfill/
-│   │   └── run.log
-│   └── lros-train/
-│       └── run.log
-└── bin/                     # Custom scripts
+/workspaces/
+└── <repository-name>/     # リポジトリのルートが直接マウント
+    ├── .devcontainer/
+    │   └── devcontainer.json
+    ├── CLAUDE.md
+    ├── .claude/
+    │   └── agents/
+    └── (project files)
 ```
+
+Codespacesでは `/workspaces/<repo>` がデフォルトの作業ディレクトリ。EC2のように `~/work/` にcloneする必要はない。

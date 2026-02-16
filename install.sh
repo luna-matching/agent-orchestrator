@@ -113,15 +113,13 @@ if [ -f "$TMPDIR/_templates/mcp-settings.json" ]; then
 else
   echo "  [WARN] _templates/mcp-settings.json not found in repo, skipping"
 fi
-# Cloud scripts
+# Cloud scripts (Codespaces)
 if [ -d "$TMPDIR/scripts/cloud" ]; then
   mkdir -p .claude/scripts/cloud
-  cp "$TMPDIR/scripts/cloud/orchestrator.sh" ".claude/scripts/cloud/orchestrator.sh"
-  chmod +x ".claude/scripts/cloud/orchestrator.sh"
+  cp "$TMPDIR/scripts/cloud/codespace.sh" ".claude/scripts/cloud/codespace.sh"
+  chmod +x ".claude/scripts/cloud/codespace.sh"
   cp "$TMPDIR/scripts/cloud/.env.example" ".claude/scripts/cloud/.env.example"
-  cp "$TMPDIR/scripts/cloud/setup-ec2.sh" ".claude/scripts/cloud/setup-ec2.sh"
-  chmod +x ".claude/scripts/cloud/setup-ec2.sh"
-  echo "  -> Copied cloud execution scripts"
+  echo "  -> Copied cloud execution scripts (Codespaces)"
 fi
 
 echo "[7/8] Checking CLAUDE.md..."
@@ -220,11 +218,12 @@ echo ""
 echo "  # Project-specific PostgreSQL MCP"
 echo "  claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres 'postgresql://user:pass@host:5432/db'"
 echo ""
-echo "Cloud Execution:"
-echo "  # Setup cloud worker"
+echo "Cloud Execution (Codespaces):"
+echo "  # Setup"
 echo "  cp .claude/scripts/cloud/.env.example .claude/scripts/cloud/.env"
-echo "  # Configure CLOUD_HOST, then:"
-echo "  bash .claude/scripts/cloud/orchestrator.sh status"
+echo "  # Usage:"
+echo "  bash .claude/scripts/cloud/codespace.sh create --repo OWNER/REPO"
+echo "  bash .claude/scripts/cloud/codespace.sh status"
 
 echo ""
 echo "[8/8] MCP setup..."

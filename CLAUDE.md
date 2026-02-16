@@ -108,13 +108,13 @@ agent-orchestrator/
 │   ├── PROJECT.md         → .agents/PROJECT.md
 │   ├── LUNA_CONTEXT.md    → .agents/LUNA_CONTEXT.md
 │   ├── SKILL_TEMPLATE.md  # 新エージェント作成用
-│   └── mcp-settings.json  # MCP設定テンプレート
+│   ├── mcp-settings.json  # MCP設定テンプレート
+│   └── devcontainer.json  # Codespaces環境テンプレート
 ├── docs/
 │   └── CLOUD_ARCHITECTURE.md  # Cloud-first実行基盤アーキテクチャ
 ├── scripts/
-│   ├── cloud/           # Cloud実行基盤
-│   │   ├── setup-ec2.sh    # EC2初期セットアップ
-│   │   ├── orchestrator.sh # ジョブ管理CLI
+│   ├── cloud/           # Cloud実行基盤（GitHub Codespaces）
+│   │   ├── codespace.sh    # Codespaces CLIラッパー（cs コマンド）
 │   │   └── .env.example    # 設定テンプレート
 │   ├── redash/          # Redash API ツール
 │   │   ├── query.sh
@@ -160,7 +160,7 @@ curl -sL https://raw.githubusercontent.com/luna-matching/agent-orchestrator/main
 7. **Coordinator never codes** - コーディネーターは計画・委任・レビューに専念
 8. **Memory is persistent** - 学習内容を即座に永続化、毎セッション蓄積
 9. **Self-maintaining** - メモリ・ログの定期メンテナンスで品質を維持
-10. **Cloud-first execution** - 重い処理はクラウドへ自動ルーティング（ルールは `_common/CLOUD_ROUTING.md`）
+10. **Cloud-first execution** - 重い処理はGitHub Codespacesへ自動ルーティング（ルールは `_common/CLOUD_ROUTING.md`、CLIは `scripts/cloud/codespace.sh`）
 
 ## Contributing
 
