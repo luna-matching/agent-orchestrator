@@ -223,6 +223,7 @@ echo "  # Setup"
 echo "  cp .claude/scripts/cloud/.env.example .claude/scripts/cloud/.env"
 echo "  # Usage:"
 echo "  bash .claude/scripts/cloud/codespace.sh create --repo OWNER/REPO"
+echo "  bash .claude/scripts/cloud/codespace.sh run \"cd /workspaces/project && npm run build\""
 echo "  bash .claude/scripts/cloud/codespace.sh status"
 
 echo ""
