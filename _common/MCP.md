@@ -12,6 +12,7 @@
 | **Sentry** | エラー監視・スタックトレース分析 | Scout, Triage, Sentinel | Global (user) |
 | **Memory** | ナレッジグラフベースの永続メモリ | Nexus, 全コーディネーター | Global (user) |
 | **PostgreSQL** | 自然言語→SQL変換、データ分析 | Analyst, Schema, Tuner | Project-specific |
+| **Playwright** | ブラウザ操作・E2Eテスト・スクリーンショット | Navigator, Voyager, Director, Probe | Global (user) |
 
 ---
 
@@ -28,6 +29,9 @@ claude mcp add --scope user --transport http sentry https://mcp.sentry.dev/mcp
 
 # Memory - 永続メモリ
 claude mcp add --scope user memory -- npx -y @modelcontextprotocol/server-memory --memory-path ~/.claude/memory
+
+# Playwright - ブラウザ操作・E2Eテスト
+claude mcp add --scope user playwright -- npx -y @playwright/mcp@latest
 ```
 
 ### Project-specific MCPs
@@ -66,6 +70,13 @@ claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres "postgre
 - Tuner: EXPLAIN ANALYZEによるクエリ最適化
 - 接続文字列はプロジェクトの `.env` から取得し、コードに埋め込まない
 
+### Playwright
+
+- Navigator: ブラウザ操作自動化（データ収集、フォーム操作、スクリーンショット）でMCP経由のブラウザ制御を活用
+- Voyager: E2Eテスト実行時にPlaywright MCPでブラウザインスタンスを直接操作
+- Director: デモ動画撮影時のブラウザ録画制御
+- Probe: DAST実行時のブラウザベース脆弱性スキャン
+
 ---
 
 ## Security Rules
@@ -74,6 +85,12 @@ claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres "postgre
 2. 接続文字列をコミットしない（`.env` またはシークレット管理）
 3. Sentry MCPはOAuth認証（トークン不要）
 4. Memory MCPのデータは `~/.claude/memory/` にローカル保存（外部送信なし）
+5. Playwright MCPはローカルブラウザのみ操作（外部サービスへの不正アクセス禁止）
+6. **外部プラグイン/MCP導入時は必ずセキュリティレビューを実施**（Sentinelによる静的分析）
+   - ネットワーク通信・データ送信の有無を確認
+   - eval()/動的コード実行の有無を確認
+   - 依存関係のサプライチェーンリスクを確認
+   - セキュリティチェック通過まで有効化しない
 
 ---
 
