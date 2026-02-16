@@ -253,12 +253,13 @@ cmd_ssh() {
 cmd_up() {
   local instance_id="${EC2_INSTANCE_ID:?EC2_INSTANCE_ID が未設定です。.env を確認してください}"
   local region="${AWS_REGION:-ap-northeast-1}"
-  local aws_cmd="aws"
-  [ -n "${AWS_PROFILE:-}" ] && aws_cmd="aws --profile $AWS_PROFILE"
+
+  # AWS_PROFILE is picked up automatically by aws CLI when exported
+  [ -n "${AWS_PROFILE:-}" ] && export AWS_PROFILE
 
   echo -e "${CYAN}EC2 インスタンスを起動中: ${BOLD}${instance_id}${NC}"
 
-  if ! $aws_cmd ec2 start-instances --instance-ids "$instance_id" --region "$region" --output text > /dev/null 2>&1; then
+  if ! aws ec2 start-instances --instance-ids "$instance_id" --region "$region" --output text > /dev/null 2>&1; then
     echo -e "${RED}エラー: EC2の起動に失敗しました${NC}"
     echo "  AWS CLIにEC2権限があるか確認してください"
     echo "  .env に AWS_PROFILE を設定するか、aws configure で設定してください"
