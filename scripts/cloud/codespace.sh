@@ -106,16 +106,14 @@ cmd_create() {
   [ -n "$repo" ] && echo -e "  Repo: ${BOLD}${repo}${NC}"
   echo -e "  Idle timeout: ${CODESPACE_IDLE_TIMEOUT}分"
 
-  local cmd="gh codespace create"
-  [ -n "$repo" ] && cmd="$cmd --repo $repo"
-  cmd="$cmd --machine $machine"
-  cmd="$cmd --idle-timeout ${CODESPACE_IDLE_TIMEOUT}m"
-  cmd="$cmd --retention-period ${CODESPACE_RETENTION_DAYS}d"
+  local -a cmd=(gh codespace create)
+  [ -n "$repo" ] && cmd+=(--repo "$repo")
+  cmd+=(--machine "$machine")
+  cmd+=(--idle-timeout "${CODESPACE_IDLE_TIMEOUT}m")
+  cmd+=(--retention-period "${CODESPACE_RETENTION_DAYS}d")
 
   local name
-  name=$(eval "$cmd" 2>&1)
-
-  if [ $? -eq 0 ]; then
+  if name=$("${cmd[@]}" 2>&1); then
     echo ""
     echo -e "${GREEN}Codespace 作成完了${NC}"
     echo -e "  Name: ${BOLD}${name}${NC}"
