@@ -8,6 +8,26 @@
 
 ---
 
+## Default: GitHub Codespaces
+
+EC2 の代替として、GitHub Codespaces をデフォルトのCloud実行環境に変更。
+
+| 比較項目 | EC2 | Codespaces |
+|---------|-----|-----------|
+| セットアップ | AMI/SG/キーペア/setup-ec2.sh | `.devcontainer/` のみ |
+| 起動 | `orch up` → SSH待ち | `gh cs create` → 即利用 |
+| 停止 | `orch down` / 手動 | 30分アイドルで自動サスペンド |
+| コスト | ~$0.33/hr + 停止忘れリスク | ~$0.72/hr（8-core）自動停止 |
+| インフラ管理 | AWS全般 | なし |
+| Claude Code | 別途インストール | postCreateCommand で自動 |
+
+### Migration
+
+EC2 の `orch` CLI は引き続き利用可能（長時間ジョブ用）。
+日常の開発作業は Codespaces に移行。
+
+---
+
 ## EC2 vs ECS/Fargate
 
 | Criteria | EC2 | ECS/Fargate |

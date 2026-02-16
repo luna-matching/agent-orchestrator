@@ -257,3 +257,49 @@ CLOUD_ROUTING:
     - "cloud:" prefix → force cloud
     - "local:" prefix → force local
 ```
+
+---
+
+## Codespaces Integration
+
+### Overview
+
+GitHub Codespaces をデフォルトの Cloud 実行環境として使用する。
+EC2 は大容量・長時間ジョブの代替手段として残す。
+
+### When to Use
+
+| Situation | Environment |
+|-----------|-------------|
+| 通常の開発作業 | **Codespaces**（8-core/32GB） |
+| エージェント並列実行 | **Codespaces** |
+| テスト・ビルド | **Codespaces** |
+| 24時間以上の連続実行 | EC2 |
+| GPU必要 | EC2 or Modal |
+
+### Setup
+
+1. GitHub リポジトリに `.devcontainer/` を配置（テンプレート: `_templates/devcontainer/`）
+2. GitHub Settings → Codespaces → Secrets に `ANTHROPIC_API_KEY` を設定
+3. `gh cs create -m largePremiumLinux` で 8-core/32GB を起動
+4. `gh cs ssh` で接続、`claude` でClaude Code起動
+
+### Cost
+
+| Machine | Spec | Cost/hr | 月額目安（3h/日×22日） |
+|---------|------|---------|---------------------|
+| 4-core | 16GB RAM | $0.36 | ~$24 |
+| 8-core | 32GB RAM | $0.72 | ~$48 |
+| 16-core | 64GB RAM | $1.44 | ~$95 |
+
+※アイドル30分で自動サスペンド。サスペンド中はストレージのみ課金（$0.07/GB/月）。
+
+### CLI Quick Reference
+
+```bash
+gh cs create -r luna-matching/has -m largePremiumLinux  # 作成
+gh cs list                                               # 一覧
+gh cs ssh -c <codespace-name>                            # SSH接続
+gh cs stop -c <codespace-name>                           # 停止
+gh cs delete -c <codespace-name>                         # 削除
+```
