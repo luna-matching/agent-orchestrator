@@ -5,7 +5,7 @@ set -euo pipefail
 # Codespace CLI Wrapper
 # ============================================================================
 # Usage:
-#   cs create [--repo OWNER/REPO] [--machine 4-core|8-core|16-core]
+#   cs create [--repo OWNER/REPO] [--machine basic|standard]
 #   cs run <command>               # Codespace内でコマンド実行
 #   cs ssh                         # CodespaceにSSH接続
 #   cs list                        # Codespace一覧
@@ -55,13 +55,14 @@ check_gh() {
 resolve_machine() {
   local input="${1:-$CODESPACE_MACHINE}"
   case "$input" in
-    4-core|4core|basic|basicLinux32gb)
+    basic|2-core|2core|basicLinux32gb)
       echo "basicLinux32gb"
       ;;
-    8-core|8core|standard|standardLinux32gb)
+    standard|4-core|4core|standardLinux32gb)
       echo "standardLinux32gb"
       ;;
-    16-core|16core|large|largePremiumLinux)
+    # largePremiumLinux はプランにより利用不可の場合あり
+    large|8-core|8core|largePremiumLinux)
       echo "largePremiumLinux"
       ;;
     *)
@@ -290,12 +291,12 @@ Commands:
   help                                         このヘルプを表示
 
 Machine Types:
-  4-core   basicLinux32gb   (4 vCPU, 16GB RAM, $0.36/hr)
-  8-core   standardLinux32gb (8 vCPU, 32GB RAM, $0.72/hr)
-  16-core  largePremiumLinux (16 vCPU, 64GB RAM, $1.44/hr)
+  basic    basicLinux32gb    (2 vCPU,  8GB RAM, $0.18/hr)
+  standard standardLinux32gb (4 vCPU, 16GB RAM, $0.36/hr)
+  large    largePremiumLinux (8 vCPU, 32GB RAM, $0.72/hr) *プランにより利用不可の場合あり
 
 Examples:
-  cs create --repo luna-matching/lros --machine 8-core
+  cs create --repo luna-matching/lros --machine standard
   cs run "cd /workspaces/lros && npm run build"
   cs ssh
   cs status

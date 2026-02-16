@@ -39,9 +39,10 @@ GitHub Codespaces を選択する理由：
 
 | Component | Spec |
 |-----------|------|
-| Machine (standard) | 4-core / 16GB RAM ($0.36/hr) |
-| Machine (heavy) | 8-core / 32GB RAM ($0.72/hr) |
-| Storage | 64GB（devcontainer.json で指定） |
+| Machine (basic) | 2-core / 8GB RAM ($0.18/hr) `basicLinux32gb` |
+| Machine (standard) | 4-core / 16GB RAM ($0.36/hr) `standardLinux32gb` |
+| Machine (large) | 8-core / 32GB RAM ($0.72/hr) `largePremiumLinux` ※プランにより利用不可 |
+| Storage | 32GB（デフォルト） |
 | Idle timeout | 30分（自動サスペンド） |
 | Retention | 停止後7日（設定可能） |
 | Image | mcr.microsoft.com/devcontainers/universal:2 |
@@ -50,9 +51,15 @@ GitHub Codespaces を選択する理由：
 
 | Workload | Machine | Reason |
 |----------|---------|--------|
-| テスト・lint・小規模ビルド | 4-core / 16GB | 十分な性能、低コスト |
-| 並列ジョブ・モデル学習・大規模ビルド | 8-core / 32GB | メモリ余裕あり |
-| 極端に重い処理（稀） | 16-core / 64GB | 必要な場合のみ |
+| テスト・lint・小規模ビルド | basic (2-core / 8GB) | 低コスト、軽量タスク向き |
+| 通常開発・ビルド・並列テスト | standard (4-core / 16GB) | 十分な性能、コストバランス良好 |
+| 大規模ビルド・モデル学習 | large (8-core / 32GB) | プランにより利用不可の場合あり |
+
+### devcontainer.json の注意事項
+
+- `hostRequirements` は指定しない（指定するとマシンタイプが見つからないエラーになる）
+- イメージは `universal:2` を使用（Python専用イメージはビルド失敗のリスクあり）
+- `npm install -g` は `sudo` が必要
 
 ---
 
@@ -60,16 +67,16 @@ GitHub Codespaces を選択する理由：
 
 | Plan | Hourly | Monthly (3hr/day, 20days) |
 |------|--------|---------------------------|
-| 4-core / 16GB | $0.36 | ~$21 |
-| 8-core / 32GB | $0.72 | ~$43 |
-| 16-core / 64GB | $1.44 | ~$86 |
-| Storage (64GB) | - | ~$4.48/月 |
+| basic (2-core / 8GB) | $0.18 | ~$11 |
+| standard (4-core / 16GB) | $0.36 | ~$21 |
+| large (8-core / 32GB) | $0.72 | ~$43 |
+| Storage (32GB) | - | ~$2.24/月 |
 
 EC2比較（参考）:
 - EC2 t3.2xlarge on-demand: ~$87/月（12hr/day, 22days）
 - EC2 + stop when idle: ~$40-60/月
 
-**Codespaces 4-core: ~$21/月、8-core: ~$43/月。EC2より安価かつ運用コストゼロ。**
+**Codespaces basic: ~$11/月、standard: ~$21/月。EC2より安価かつ運用コストゼロ。**
 
 ---
 
@@ -78,7 +85,7 @@ EC2比較（参考）:
 ```
 ┌─────────────────────────┐            ┌──────────────────────────────┐
 │  Local Mac (48GB)       │            │  GitHub Codespace            │
-│                         │   gh CLI   │  4-core/16GB or 8-core/32GB  │
+│                         │   gh CLI   │  basic(2c/8G) or standard(4c/16G) │
 │  Claude Code (CLI)      │──────────→ │                              │
 │  IDE / Browser          │            │  Job A: npm run build        │
 │  Slack                  │            │  Job B: pytest               │
@@ -125,9 +132,9 @@ cs run "cd /workspaces/lros && python train.py --config prod.yaml && python gene
 ```bash
 cs status
 # NAME                  STATE      MACHINE        IDLE
-# video-marketing-ai    Available  4-core/16GB    2m
-# coupon-engine         Available  4-core/16GB    5m
-# lros                  Available  8-core/32GB    1m
+# video-marketing-ai    Available  basic(2c/8G)     2m
+# coupon-engine         Available  basic(2c/8G)     5m
+# lros                  Available  standard(4c/16G) 1m
 
 cs ssh   # Codespace にSSH接続して直接確認
 ```
@@ -140,7 +147,7 @@ Local Mac stays at ~8GB usage (IDE + browser + Slack). No memory pressure.
 
 | Concern | Mitigation |
 |---------|------------|
-| API keys | GitHub Codespace Secrets（暗号化保存、Codespace内のみ展開） |
+| API keys | GitHub Codespace Secrets（暗号化保存、VSCode/ターミナルに展開。ただし `gh cs ssh` セッションには自動注入されないため `.env` からの読み込みが必要） |
 | SSH keys | 不要（`gh codespace ssh` が認証処理） |
 | Repo access | GitHub認証で自動（追加設定不要） |
 | Network | GitHub管理（Security Group設定不要） |
