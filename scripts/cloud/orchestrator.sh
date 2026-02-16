@@ -38,8 +38,8 @@ fi
 
 CLOUD_HOST="${CLOUD_HOST:?CLOUD_HOST が未設定です。.env を確認してください}"
 CLOUD_USER="${CLOUD_USER:-ec2-user}"
-CLOUD_WORK_DIR="${CLOUD_WORK_DIR:-~/work}"
-CLOUD_LOG_DIR="${CLOUD_LOG_DIR:-~/logs}"
+CLOUD_WORK_DIR="${CLOUD_WORK_DIR:-/home/${CLOUD_USER}/work}"
+CLOUD_LOG_DIR="${CLOUD_LOG_DIR:-/home/${CLOUD_USER}/logs}"
 
 # --- SSH command builder ---
 build_ssh_cmd() {
